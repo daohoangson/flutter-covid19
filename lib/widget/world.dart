@@ -30,9 +30,19 @@ class _CountryListTile extends StatelessWidget {
   Widget build(BuildContext context) => ListTile(
         title: Text(country.name),
         trailing: HtmlWidget(
-          '<span style="color: #D00">${_formatNumber(country.latest.deaths)}</span>'
-          ' / '
-          '<span style="color: #F90">${_formatNumber(country.latest.cases)}</span>',
+          '<span style="color: #D00">'
+                  '${_formatNumber(country.latest.cumulativeDeaths)}' +
+              (country.latest.newDeaths > 0
+                  ? ' <span style="color: #ccc">+${_formatNumber(country.latest.newDeaths)}</span>'
+                  : '') +
+              '</span>'
+                  ' / '
+                  '<span style="color: #F90">'
+                  '${_formatNumber(country.latest.cumulativeCases)}' +
+              (country.latest.newCases > 0
+                  ? ' <span style="color: #ccc">+${_formatNumber(country.latest.newCases)}</span>'
+                  : '') +
+              '</span>',
         ),
       );
 

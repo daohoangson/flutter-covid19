@@ -72,12 +72,20 @@ class WhoApi extends ChangeNotifier {
     if (fieldIndexCountry == -1) {
       return Future.error(StateError('`Country` not found'));
     }
-    final fieldIndexCases = headers.indexOf('Cumulative_cases');
-    if (fieldIndexCases == -1) {
+    final fieldIndexNewCases = headers.indexOf('New_cases');
+    if (fieldIndexNewCases == -1) {
+      return Future.error(StateError('`New_cases` not found'));
+    }
+    final fieldIndexCumulativeCases = headers.indexOf('Cumulative_cases');
+    if (fieldIndexCumulativeCases == -1) {
       return Future.error(StateError('`Cumulative_cases` not found'));
     }
-    final fieldIndexDeaths = headers.indexOf('Cumulative_deaths');
-    if (fieldIndexDeaths == -1) {
+    final fieldIndexNewDeaths = headers.indexOf('New_deaths');
+    if (fieldIndexNewDeaths == -1) {
+      return Future.error(StateError('`New_deaths` not found'));
+    }
+    final fieldIndexCumulativeDeaths = headers.indexOf('Cumulative_deaths');
+    if (fieldIndexCumulativeDeaths == -1) {
       return Future.error(StateError('`Cumulative_deaths` not found'));
     }
 
@@ -99,11 +107,15 @@ class WhoApi extends ChangeNotifier {
         continue;
       }
 
-      list[map[countryCode]].add(WhoRecord(
-        dateReported,
-        cases: int.tryParse(data[i][fieldIndexCases]) ?? 0,
-        deaths: int.tryParse(data[i][fieldIndexDeaths]) ?? 0,
-      ));
+      list[map[countryCode]].records.add(WhoRecord(
+            dateReported,
+            newCases: int.tryParse(data[i][fieldIndexNewCases]) ?? 0,
+            cumulativeCases:
+                int.tryParse(data[i][fieldIndexCumulativeCases]) ?? 0,
+            newDeaths: int.tryParse(data[i][fieldIndexNewDeaths]) ?? 0,
+            cumulativeDeaths:
+                int.tryParse(data[i][fieldIndexCumulativeDeaths]) ?? 0,
+          ));
 
       i++;
     }
@@ -122,15 +134,6 @@ class WhoCountry {
 
   WhoRecord get latest => records.isNotEmpty ? records.last : null;
 
-  void add(WhoRecord record) {
-    if (records.isNotEmpty) {
-      final last = records.last;
-      if (last.cases == record.cases && last.deaths == record.deaths) return;
-    }
-
-    records.add(record);
-  }
-
   @override
   String toString() => '$code(${records.map((d) => d.toString()).join(', ')})';
 }
@@ -138,12 +141,21 @@ class WhoCountry {
 @immutable
 class WhoRecord {
   final DateTime dateReported;
-  final int cases;
-  final int deaths;
+  final int newCases;
+  final int cumulativeCases;
+  final int newDeaths;
+  final int cumulativeDeaths;
 
-  WhoRecord(this.dateReported, {this.cases, this.deaths});
+  WhoRecord(
+    this.dateReported, {
+    this.newCases,
+    this.cumulativeCases,
+    this.newDeaths,
+    this.cumulativeDeaths,
+  });
 
   @override
   String toString() =>
-      '${dateReported.year}-${dateReported.month}-${dateReported.day}/$cases/$deaths';
+      '${dateReported.year}-${dateReported.month}-${dateReported.day}/'
+      '$cumulativeCases/$cumulativeDeaths';
 }
