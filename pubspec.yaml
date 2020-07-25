@@ -10,7 +10,6 @@ dependencies:
   csv:
   flutter:
     sdk: flutter
-  flutter_widget_from_html_core:
   http:
   intl:
   provider:

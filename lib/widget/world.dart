@@ -1,49 +1,99 @@
 import 'package:covid19/api/who.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 class Covid19World extends StatelessWidget {
   @override
   Widget build(BuildContext _) => Consumer<WhoApi>(
-        builder: (_, api, __) => api.isLoading
+        builder: (context, api, __) => api.isLoading
             ? const Center(
                 child: CircularProgressIndicator(),
               )
             : api.hasData
-                ? ListView.builder(
-                    itemBuilder: (context, index) =>
-                        _CountryListTile(api.countries[index]),
-                    itemCount: api.countries.length,
-                  )
+                ? SafeArea(child: _buildTable(context, api))
                 : Text(api.error.toString()),
       );
-}
 
-class _CountryListTile extends StatelessWidget {
-  final WhoCountry country;
+  Widget _buildTable(BuildContext context, WhoApi api) {
+    final width = MediaQuery.of(context).size.width;
+    final showNew = width > 600;
+    final theme = Theme.of(context);
 
-  const _CountryListTile(this.country, {Key key}) : super(key: key);
+    final columnWidths = {0: const FlexColumnWidth()};
+    final defaultColumnWidth = const FixedColumnWidth(60);
 
-  @override
-  Widget build(BuildContext context) => ListTile(
-        title: Text(country.name),
-        trailing: HtmlWidget(
-          '<span style="color: #D00">'
-                  '${_formatNumber(country.latest.cumulativeDeaths)}' +
-              (country.latest.newDeaths > 0
-                  ? ' <span style="color: #ccc">+${_formatNumber(country.latest.newDeaths)}</span>'
-                  : '') +
-              '</span>'
-                  ' / '
-                  '<span style="color: #F90">'
-                  '${_formatNumber(country.latest.cumulativeCases)}' +
-              (country.latest.newCases > 0
-                  ? ' <span style="color: #ccc">+${_formatNumber(country.latest.newCases)}</span>'
-                  : '') +
-              '</span>',
+    return Column(children: [
+      Table(
+        children: [
+          TableRow(children: [
+            _buildText('Country', style: theme.textTheme.caption),
+            _buildText('Deaths', style: theme.textTheme.caption),
+            if (showNew) const SizedBox.shrink(),
+            _buildText('Cases', style: theme.textTheme.caption),
+            if (showNew) const SizedBox.shrink(),
+          ])
+        ],
+        columnWidths: columnWidths,
+        defaultColumnWidth: defaultColumnWidth,
+      ),
+      Expanded(
+        child: SingleChildScrollView(
+          child: Table(
+            children: _buildRows(
+              theme,
+              api,
+              showNew: showNew,
+            ),
+            columnWidths: columnWidths,
+            defaultColumnWidth: defaultColumnWidth,
+          ),
         ),
+      ),
+    ]);
+  }
+
+  List<TableRow> _buildRows(
+    ThemeData theme,
+    WhoApi api, {
+    bool showNew = false,
+  }) =>
+      api.countries
+          .map((country) => TableRow(children: [
+                _buildText(country.name),
+                _buildText(
+                  _formatNumber(country.latest.cumulativeDeaths),
+                  style: theme.textTheme.caption,
+                ),
+                if (showNew)
+                  _buildText(
+                    country.latest.newDeaths > 0
+                        ? '+${_formatNumber(country.latest.newDeaths)}'
+                        : '-',
+                    style: theme.textTheme.caption,
+                  ),
+                _buildText(
+                  _formatNumber(country.latest.cumulativeCases),
+                  style: theme.textTheme.caption,
+                ),
+                if (showNew)
+                  _buildText(
+                    country.latest.newCases > 0
+                        ? '+${_formatNumber(country.latest.newCases)}'
+                        : '-',
+                    style: theme.textTheme.caption,
+                  ),
+              ]))
+          .toList(growable: false);
+
+  Widget _buildText(String data, {TextStyle style}) => Padding(
+        child: Text(
+          data,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: style,
+        ),
+        padding: const EdgeInsets.all(8),
       );
 
   String _formatNumber(int v) => NumberFormat.compact().format(v);
