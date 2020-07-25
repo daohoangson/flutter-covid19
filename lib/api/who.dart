@@ -68,6 +68,10 @@ class WhoApi extends ChangeNotifier {
     if (fieldIndexCountryCode == -1) {
       return Future.error(StateError('`Country_code` not found'));
     }
+    final fieldIndexCountry = headers.indexOf('Country');
+    if (fieldIndexCountry == -1) {
+      return Future.error(StateError('`Country` not found'));
+    }
     final fieldIndexCases = headers.indexOf('Cumulative_cases');
     if (fieldIndexCases == -1) {
       return Future.error(StateError('`Cumulative_cases` not found'));
@@ -83,7 +87,10 @@ class WhoApi extends ChangeNotifier {
     while (i < data.length) {
       final countryCode = data[i][fieldIndexCountryCode];
       if (!map.containsKey(countryCode)) {
-        list.add(WhoCountry(countryCode));
+        list.add(WhoCountry(
+          countryCode,
+          name: data[i][fieldIndexCountry],
+        ));
         map[countryCode] = list.length - 1;
       }
 
@@ -107,10 +114,11 @@ class WhoApi extends ChangeNotifier {
 
 @immutable
 class WhoCountry {
-  final String countryCode;
+  final String code;
+  final String name;
   final List<WhoRecord> records = [];
 
-  WhoCountry(this.countryCode);
+  WhoCountry(this.code, {this.name});
 
   WhoRecord get latest => records.isNotEmpty ? records.last : null;
 
@@ -124,8 +132,7 @@ class WhoCountry {
   }
 
   @override
-  String toString() =>
-      '$countryCode(${records.map((d) => d.toString()).join(', ')})';
+  String toString() => '$code(${records.map((d) => d.toString()).join(', ')})';
 }
 
 @immutable

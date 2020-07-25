@@ -1,7 +1,4 @@
 import 'package:covid19/api/who.dart';
-import 'package:dart_countries_states/country_provider.dart';
-import 'package:dart_countries_states/models/alpha2_codes.dart';
-import 'package:dart_countries_states/models/country.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
 import 'package:intl/intl.dart';
@@ -31,7 +28,7 @@ class _CountryListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListTile(
-        title: _CountryName(country.countryCode),
+        title: Text(country.name),
         trailing: HtmlWidget(
           '<span style="color: #D00">${_formatNumber(country.latest.deaths)}</span>'
           ' / '
@@ -40,19 +37,4 @@ class _CountryListTile extends StatelessWidget {
       );
 
   String _formatNumber(int v) => NumberFormat.compact().format(v);
-}
-
-class _CountryName extends StatelessWidget {
-  final String countryCode;
-
-  const _CountryName(this.countryCode, {Key key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) => FutureProvider<Country>(
-        child: Consumer<Country>(
-          builder: (_, country, __) => Text(country?.name ?? countryCode),
-        ),
-        create: (_) => CountryProvider()
-            .getCountryByCode2(code2: Alpha2Code.valueOf(countryCode)),
-      );
 }
