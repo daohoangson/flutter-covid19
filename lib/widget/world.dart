@@ -11,6 +11,9 @@ class Covid19World extends StatefulWidget {
 class _Covid19WorldState extends State<Covid19World> {
   _Covid19Order order = _Covid19Order.deathsDesc;
 
+  _Covid19Order _sortedOrder;
+  List<WhoCountry> _sortedList;
+
   @override
   Widget build(BuildContext _) => Consumer<WhoApi>(
         builder: (context, api, __) => api.isLoading
@@ -27,175 +30,157 @@ class _Covid19WorldState extends State<Covid19World> {
     final showNew = width > 600;
     final theme = Theme.of(context);
 
-    final columnWidths = {0: const FlexColumnWidth()};
-    final defaultColumnWidth = const FixedColumnWidth(75);
+    if (_sortedOrder != order) {
+      _sortedList = [...api.countries];
+      _sortedList.sort((a, b) {
+        switch (order) {
+          case _Covid19Order.casesAsc:
+            return a.latest.cumulativeCases.compareTo(b.latest.cumulativeCases);
+          case _Covid19Order.casesDesc:
+            return b.latest.cumulativeCases.compareTo(a.latest.cumulativeCases);
+          case _Covid19Order.deathsAsc:
+            return a.latest.cumulativeDeaths
+                .compareTo(b.latest.cumulativeDeaths);
+          case _Covid19Order.deathsDesc:
+            return b.latest.cumulativeDeaths
+                .compareTo(a.latest.cumulativeDeaths);
+        }
+
+        return 0;
+      });
+      _sortedOrder = order;
+    }
 
     return Column(children: [
-      Table(
-        children: [
-          TableRow(children: [
-            const SizedBox.shrink(),
-            InkWell(
-              child: _buildText(
-                (order == _Covid19Order.deathsAsc
-                        ? '↑ '
-                        : order == _Covid19Order.deathsDesc ? '↓ ' : '') +
-                    'Deaths',
-                style: theme.textTheme.caption,
-              ),
-              onTap: () => setState(() => order =
-                  order == _Covid19Order.deathsDesc
-                      ? _Covid19Order.deathsAsc
-                      : _Covid19Order.deathsDesc),
-            ),
-            if (showNew) const SizedBox.shrink(),
-            InkWell(
-              child: _buildText(
-                (order == _Covid19Order.casesAsc
-                        ? '↑ '
-                        : order == _Covid19Order.casesDesc ? '↓ ' : '') +
-                    'Cases',
-                style: theme.textTheme.caption,
-              ),
-              onTap: () => setState(() => order =
-                  order == _Covid19Order.casesDesc
-                      ? _Covid19Order.casesAsc
-                      : _Covid19Order.casesDesc),
-            ),
-            if (showNew) const SizedBox.shrink(),
-          ])
-        ],
-        columnWidths: columnWidths,
-        defaultColumnWidth: defaultColumnWidth,
-      ),
-      Expanded(
-        child: SingleChildScrollView(
-          child: Table(
-            children: _buildRows(
-              theme,
-              api,
-              showNew: showNew,
-            ),
-            columnWidths: columnWidths,
-            defaultColumnWidth: defaultColumnWidth,
+      Row(children: [
+        const Expanded(child: SizedBox.shrink()),
+        InkWell(
+          child: _buildNumber(
+            (order == _Covid19Order.deathsAsc
+                    ? '↑ '
+                    : order == _Covid19Order.deathsDesc ? '↓ ' : '') +
+                'Deaths',
+            style: theme.textTheme.caption,
           ),
+          onTap: () => setState(() => order = order == _Covid19Order.deathsDesc
+              ? _Covid19Order.deathsAsc
+              : _Covid19Order.deathsDesc),
+        ),
+        if (showNew) _buildNumber(null),
+        InkWell(
+          child: _buildNumber(
+            (order == _Covid19Order.casesAsc
+                    ? '↑ '
+                    : order == _Covid19Order.casesDesc ? '↓ ' : '') +
+                'Cases',
+            style: theme.textTheme.caption,
+          ),
+          onTap: () => setState(() => order = order == _Covid19Order.casesDesc
+              ? _Covid19Order.casesAsc
+              : _Covid19Order.casesDesc),
+        ),
+        if (showNew) _buildNumber(null),
+      ]),
+      Expanded(
+        child: ListView.builder(
+          itemBuilder: (_, index) => _buildRow(
+            theme,
+            api,
+            _sortedList[index],
+            showNew: showNew,
+          ),
+          itemCount: _sortedList.length,
         ),
       ),
     ]);
   }
 
-  List<TableRow> _buildRows(
+  Widget _buildRow(
     ThemeData theme,
-    WhoApi api, {
+    WhoApi api,
+    WhoCountry country, {
     bool showNew = false,
-  }) {
-    final countries = [...api.countries];
-    countries.sort((a, b) {
-      switch (order) {
-        case _Covid19Order.casesAsc:
-          return a.latest.cumulativeCases.compareTo(b.latest.cumulativeCases);
-        case _Covid19Order.casesDesc:
-          return b.latest.cumulativeCases.compareTo(a.latest.cumulativeCases);
-        case _Covid19Order.deathsAsc:
-          return a.latest.cumulativeDeaths.compareTo(b.latest.cumulativeDeaths);
-        case _Covid19Order.deathsDesc:
-          return b.latest.cumulativeDeaths.compareTo(a.latest.cumulativeDeaths);
-      }
-
-      return 0;
-    });
-
-    return countries
-        .map((country) => TableRow(children: [
-              Padding(
-                child: Column(
-                  children: [
-                    Text(country.name),
-                    api.cumulativeDeaths > 0
-                        ? FractionallySizedBox(
-                            alignment: Alignment.centerLeft,
-                            child: Container(
-                              decoration: BoxDecoration(color: Colors.red),
-                              height: showNew ? 2 : 4,
-                            ),
-                            widthFactor: country.latest.cumulativeDeaths /
-                                api.cumulativeDeaths,
-                          )
-                        : const SizedBox.shrink(),
-                    if (showNew)
-                      api.newDeaths > 0
-                          ? FractionallySizedBox(
-                              alignment: Alignment.centerLeft,
-                              child: Container(
-                                decoration: BoxDecoration(color: Colors.orange),
-                                height: showNew ? 2 : 4,
-                              ),
-                              widthFactor:
-                                  country.latest.newDeaths / api.newDeaths,
-                            )
-                          : const SizedBox.shrink(),
-                    api.cumulativeCases > 0
-                        ? FractionallySizedBox(
-                            alignment: Alignment.centerLeft,
-                            child: Container(
-                              decoration: BoxDecoration(color: Colors.green),
-                              height: showNew ? 2 : 4,
-                            ),
-                            widthFactor: country.latest.cumulativeCases /
-                                api.cumulativeCases,
-                          )
-                        : const SizedBox.shrink(),
-                    if (showNew)
-                      api.newCases > 0
-                          ? FractionallySizedBox(
-                              alignment: Alignment.centerLeft,
-                              child: Container(
-                                decoration: BoxDecoration(color: Colors.lime),
-                                height: showNew ? 2 : 4,
-                              ),
-                              widthFactor:
-                                  country.latest.newCases / api.newCases,
-                            )
-                          : const SizedBox.shrink(),
-                  ],
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                ),
-                padding: const EdgeInsets.fromLTRB(8, 8, 0, 0),
-              ),
-              _buildText(
-                _formatNumber(country.latest.cumulativeDeaths),
-                style: theme.textTheme.caption.copyWith(color: Colors.red),
-              ),
-              if (showNew)
-                _buildText(
-                  country.latest.newDeaths > 0
-                      ? '+${_formatNumber(country.latest.newDeaths)}'
-                      : '',
-                  style: theme.textTheme.caption.copyWith(color: Colors.orange),
-                ),
-              _buildText(
-                _formatNumber(country.latest.cumulativeCases),
-                style: theme.textTheme.caption.copyWith(color: Colors.green),
-              ),
-              if (showNew)
-                _buildText(
-                  country.latest.newCases > 0
-                      ? '+${_formatNumber(country.latest.newCases)}'
-                      : '',
-                  style: theme.textTheme.caption.copyWith(color: Colors.lime),
-                ),
-            ]))
-        .toList(growable: false);
-  }
-
-  Widget _buildText(String data, {TextStyle style}) => Padding(
-        child: Text(
-          data,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: style,
+  }) =>
+      Row(children: [
+        Expanded(
+          child: Padding(
+            child: Column(
+              children: [
+                Text(country.name),
+                _buildBarGraph(
+                    country.latest.cumulativeDeaths, api.cumulativeDeaths,
+                    color: Colors.red, showNew: showNew),
+                if (showNew)
+                  _buildBarGraph(
+                    country.latest.newDeaths,
+                    api.newDeaths,
+                    color: Colors.orange,
+                  ),
+                _buildBarGraph(
+                    country.latest.cumulativeCases, api.cumulativeCases,
+                    color: Colors.green, showNew: showNew),
+                if (showNew)
+                  _buildBarGraph(
+                    country.latest.newCases,
+                    api.newCases,
+                    color: Colors.lime,
+                  ),
+              ],
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+            ),
+            padding: const EdgeInsets.fromLTRB(8, 8, 0, 0),
+          ),
         ),
-        padding: const EdgeInsets.all(8),
+        _buildNumber(
+          _formatNumber(country.latest.cumulativeDeaths),
+          style: theme.textTheme.caption.copyWith(color: Colors.red),
+        ),
+        if (showNew)
+          _buildNumber(
+            country.latest.newDeaths > 0
+                ? '+${_formatNumber(country.latest.newDeaths)}'
+                : null,
+            style: theme.textTheme.caption.copyWith(color: Colors.orange),
+          ),
+        _buildNumber(
+          _formatNumber(country.latest.cumulativeCases),
+          style: theme.textTheme.caption.copyWith(color: Colors.green),
+        ),
+        if (showNew)
+          _buildNumber(
+            country.latest.newCases > 0
+                ? '+${_formatNumber(country.latest.newCases)}'
+                : null,
+            style: theme.textTheme.caption.copyWith(color: Colors.lime),
+          ),
+      ]);
+
+  Widget _buildBarGraph(int country, int world,
+          {Color color, bool showNew = true}) =>
+      world > 0
+          ? FractionallySizedBox(
+              alignment: Alignment.centerLeft,
+              child: Container(
+                decoration: BoxDecoration(color: color),
+                height: showNew ? 2 : 4,
+              ),
+              widthFactor: country / world,
+            )
+          : const SizedBox.shrink();
+
+  Widget _buildNumber(String data, {TextStyle style}) => SizedBox(
+        child: data != null
+            ? Padding(
+                child: Text(
+                  data,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: style,
+                ),
+                padding: const EdgeInsets.all(8),
+              )
+            : null,
+        width: 75,
       );
 
   String _formatNumber(int v) => NumberFormat.compact().format(v);
