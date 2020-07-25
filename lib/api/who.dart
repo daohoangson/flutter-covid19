@@ -18,8 +18,32 @@ class WhoApi extends ChangeNotifier {
   set countries(List<WhoCountry> v) {
     _countries = v;
     _isLoading = false;
+
+    _cumulativeCases = 0;
+    _newCases = 0;
+    _cumulativeDeaths = 0;
+    _newDeaths = 0;
+    for (final country in v) {
+      _cumulativeCases += country.latest.cumulativeCases;
+      _newCases += country.latest.newCases;
+      _cumulativeDeaths += country.latest.cumulativeDeaths;
+      _newDeaths += country.latest.newDeaths;
+    }
+
     notifyListeners();
   }
+
+  int _cumulativeCases = 0;
+  int get cumulativeCases => _cumulativeCases;
+
+  int _newCases = 0;
+  int get newCases => _newCases;
+
+  int _cumulativeDeaths = 0;
+  int get cumulativeDeaths => _cumulativeDeaths;
+
+  int _newDeaths = 0;
+  int get newDeaths => _newDeaths;
 
   Error _error;
   Error get error => _error;

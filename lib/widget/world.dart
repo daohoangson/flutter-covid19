@@ -107,28 +107,82 @@ class _Covid19WorldState extends State<Covid19World> {
 
     return countries
         .map((country) => TableRow(children: [
-              _buildText(country.name),
+              Padding(
+                child: Column(
+                  children: [
+                    Text(country.name),
+                    api.cumulativeDeaths > 0
+                        ? FractionallySizedBox(
+                            alignment: Alignment.centerLeft,
+                            child: Container(
+                              decoration: BoxDecoration(color: Colors.red),
+                              height: showNew ? 2 : 4,
+                            ),
+                            widthFactor: country.latest.cumulativeDeaths /
+                                api.cumulativeDeaths,
+                          )
+                        : const SizedBox.shrink(),
+                    if (showNew)
+                      api.newDeaths > 0
+                          ? FractionallySizedBox(
+                              alignment: Alignment.centerLeft,
+                              child: Container(
+                                decoration: BoxDecoration(color: Colors.orange),
+                                height: showNew ? 2 : 4,
+                              ),
+                              widthFactor:
+                                  country.latest.newDeaths / api.newDeaths,
+                            )
+                          : const SizedBox.shrink(),
+                    api.cumulativeCases > 0
+                        ? FractionallySizedBox(
+                            alignment: Alignment.centerLeft,
+                            child: Container(
+                              decoration: BoxDecoration(color: Colors.green),
+                              height: showNew ? 2 : 4,
+                            ),
+                            widthFactor: country.latest.cumulativeCases /
+                                api.cumulativeCases,
+                          )
+                        : const SizedBox.shrink(),
+                    if (showNew)
+                      api.newCases > 0
+                          ? FractionallySizedBox(
+                              alignment: Alignment.centerLeft,
+                              child: Container(
+                                decoration: BoxDecoration(color: Colors.lime),
+                                height: showNew ? 2 : 4,
+                              ),
+                              widthFactor:
+                                  country.latest.newCases / api.newCases,
+                            )
+                          : const SizedBox.shrink(),
+                  ],
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                ),
+                padding: const EdgeInsets.fromLTRB(8, 8, 0, 0),
+              ),
               _buildText(
                 _formatNumber(country.latest.cumulativeDeaths),
-                style: theme.textTheme.caption,
+                style: theme.textTheme.caption.copyWith(color: Colors.red),
               ),
               if (showNew)
                 _buildText(
                   country.latest.newDeaths > 0
                       ? '+${_formatNumber(country.latest.newDeaths)}'
-                      : '-',
-                  style: theme.textTheme.caption,
+                      : '',
+                  style: theme.textTheme.caption.copyWith(color: Colors.orange),
                 ),
               _buildText(
                 _formatNumber(country.latest.cumulativeCases),
-                style: theme.textTheme.caption,
+                style: theme.textTheme.caption.copyWith(color: Colors.green),
               ),
               if (showNew)
                 _buildText(
                   country.latest.newCases > 0
                       ? '+${_formatNumber(country.latest.newCases)}'
-                      : '-',
-                  style: theme.textTheme.caption,
+                      : '',
+                  style: theme.textTheme.caption.copyWith(color: Colors.lime),
                 ),
             ]))
         .toList(growable: false);
