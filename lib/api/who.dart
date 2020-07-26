@@ -19,31 +19,29 @@ class WhoApi extends ChangeNotifier {
     _countries = v;
     _isLoading = false;
 
-    _cumulativeCases = 0;
-    _newCases = 0;
-    _cumulativeDeaths = 0;
-    _newDeaths = 0;
+    var cumulativeCases = 0;
+    var newCases = 0;
+    var cumulativeDeaths = 0;
+    var newDeaths = 0;
     for (final country in v) {
-      _cumulativeCases += country.latest.cumulativeCases;
-      _newCases += country.latest.newCases;
-      _cumulativeDeaths += country.latest.cumulativeDeaths;
-      _newDeaths += country.latest.newDeaths;
+      cumulativeCases += country.latest.cumulativeCases;
+      newCases += country.latest.newCases;
+      cumulativeDeaths += country.latest.cumulativeDeaths;
+      newDeaths += country.latest.newDeaths;
     }
+    _worldLatest = WhoRecord(
+      null,
+      newCases: newCases,
+      cumulativeCases: cumulativeCases,
+      newDeaths: newDeaths,
+      cumulativeDeaths: cumulativeDeaths,
+    );
 
     notifyListeners();
   }
 
-  int _cumulativeCases = 0;
-  int get cumulativeCases => _cumulativeCases;
-
-  int _newCases = 0;
-  int get newCases => _newCases;
-
-  int _cumulativeDeaths = 0;
-  int get cumulativeDeaths => _cumulativeDeaths;
-
-  int _newDeaths = 0;
-  int get newDeaths => _newDeaths;
+  WhoRecord _worldLatest;
+  WhoRecord get worldLatest => _worldLatest;
 
   Error _error;
   Error get error => _error;
