@@ -1,5 +1,5 @@
-import 'package:charts_flutter/flutter.dart' as charts;
 import 'package:covid19/api/api.dart';
+import 'package:covid19/widget/graph.dart';
 import 'package:flutter/material.dart';
 import 'package:implicitly_animated_reorderable_list/implicitly_animated_reorderable_list.dart';
 import 'package:intl/intl.dart';
@@ -113,6 +113,7 @@ class _DataRow extends StatelessWidget {
         _NumberWidget(
           color: Colors.red,
           country: country,
+          graphMode: GraphMode.LINE,
           measureFn: (record) => record.deathsTotal,
         ),
         if (showNew)
@@ -120,11 +121,13 @@ class _DataRow extends StatelessWidget {
             color: Colors.orange,
             country: country,
             data: '+${_formatNumber(country.latest.deathsNew)}',
+            graphMode: GraphMode.BAR,
             measureFn: (record) => record.deathsNew,
           ),
         _NumberWidget(
           color: Colors.green,
           country: country,
+          graphMode: GraphMode.LINE,
           measureFn: (record) => record.casesTotal,
         ),
         if (showNew)
@@ -132,6 +135,7 @@ class _DataRow extends StatelessWidget {
             color: Colors.lime,
             country: country,
             data: '+${_formatNumber(country.latest.casesNew)}',
+            graphMode: GraphMode.BAR,
             measureFn: (record) => record.casesNew,
           ),
       ]);
@@ -157,41 +161,6 @@ class _NumberBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext _) => SizedBox(child: child, width: 75);
-}
-
-class _NumberChart extends StatelessWidget {
-  final Color color;
-  final ApiCountry country;
-  final int Function(ApiRecord) measureFn;
-
-  _NumberChart({
-    @required this.color,
-    @required this.country,
-    Key key,
-    @required this.measureFn,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext _) => charts.TimeSeriesChart(
-        [
-          charts.Series<ApiRecord, DateTime>(
-            id: 'id',
-            colorFn: (_, __) => charts.ColorUtil.fromDartColor(color),
-            data: country.records,
-            domainFn: (record, _) => record.date,
-            measureFn: (record, _) => measureFn(record),
-          ),
-        ],
-        domainAxis: charts.DateTimeAxisSpec(
-          renderSpec: charts.NoneRenderSpec(),
-          viewport: charts.DateTimeExtents(
-            start: DateTime(2020, 2, 24),
-            end: DateTime.now(),
-          ),
-        ),
-        primaryMeasureAxis:
-            charts.NumericAxisSpec(renderSpec: charts.NoneRenderSpec()),
-      );
 }
 
 class _NumberText extends StatelessWidget {
@@ -220,6 +189,7 @@ class _NumberWidget extends StatelessWidget {
   final Color color;
   final ApiCountry country;
   final String data;
+  final GraphMode graphMode;
   final int Function(ApiRecord) measureFn;
 
   _NumberWidget({
@@ -227,6 +197,7 @@ class _NumberWidget extends StatelessWidget {
     @required this.country,
     String data,
     Key key,
+    @required this.graphMode,
     @required this.measureFn,
   })  : data = data ?? _formatNumber(measureFn(country.latest)),
         super(key: key);
@@ -237,10 +208,12 @@ class _NumberWidget extends StatelessWidget {
           children: [
             _NumberText(data, color: color),
             Positioned.fill(
-              child: _NumberChart(
+              child: GraphWidget(
                 color: color,
-                country: country,
+                id: "${country.code}-${measureFn(country.latest)}",
                 measureFn: measureFn,
+                mode: graphMode,
+                records: country.records,
               ),
             ),
           ],
