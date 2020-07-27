@@ -71,6 +71,17 @@ class _DataTableState extends State<DataTableWidget> {
         return cmp;
       });
       _sortedOrder = order;
+
+      WidgetsBinding.instance
+          .addPostFrameCallback((_) => MapData.of(context).heatmap = Heatmap(
+                points: _sortedList.map((country) => HeatmapPoint(
+                      countryCode: country.code,
+                      value: _sortedOrder == _SortOrder.casesAsc ||
+                              _sortedOrder == _SortOrder.casesDesc
+                          ? country.latest.casesTotal
+                          : country.latest.deathsTotal,
+                    )),
+              ));
     }
 
     return Column(children: [
