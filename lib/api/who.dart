@@ -2,8 +2,8 @@ import 'dart:isolate';
 
 import 'package:covid19/api/api.dart';
 import 'package:csv/csv.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 
 class WhoApi extends Api {
   static const CSV_URL = 'https://covid19.who.int/WHO-COVID-19-global-data.csv';
@@ -55,7 +55,10 @@ class _WhoData {
 @immutable
 class _WhoProgress {
   final double value;
-  _WhoProgress(this.value);
+  _WhoProgress.downloading(int count, int total)
+      : value = (count / (total ?? 1500000.0)).clamp(0, 1) * .5;
+  _WhoProgress.parsing(Iterable<ApiCountry> countries)
+      : value = 0.5 + (countries.length / 250).clamp(0, 1) * .5;
 }
 
 Future<_WhoData> _compute(_) async => _fetch();
@@ -68,7 +71,12 @@ void _isolate(SendPort sendPort) async {
 Future<_WhoData> _fetch({SendPort sendPort}) async {
   final whoUrl = WhoApi.CSV_URL;
   final url = kIsWeb ? 'https://cors-anywhere.herokuapp.com/$whoUrl' : whoUrl;
-  final response = await http.get(url);
+  final response = await Dio().getUri<String>(
+    Uri.parse(url),
+    onReceiveProgress: (count, total) =>
+        sendPort?.send(_WhoProgress.downloading(count, total)),
+    options: Options(responseType: ResponseType.plain),
+  );
   if (response.statusCode != 200) {
     return Future.error(StateError('WHO statusCode ${response.statusCode}'));
   }
@@ -76,7 +84,7 @@ Future<_WhoData> _fetch({SendPort sendPort}) async {
   final data = const CsvToListConverter(
     eol: '\n',
     shouldParseNumbers: false,
-  ).convert(response.body);
+  ).convert(response.data);
   if (data.length < 10) {
     // something is wrong, we expect thousands of rows
     return Future.error(StateError('WHO data.length=${data.length}'));
@@ -125,7 +133,7 @@ Future<_WhoData> _fetch({SendPort sendPort}) async {
       ));
       map[countryCode] = list.length - 1;
 
-      sendPort?.send(_WhoProgress(list.length / 178));
+      sendPort?.send(_WhoProgress.parsing(list));
     }
 
     final dateReported = DateTime.tryParse(data[i][fieldIndexDateReported]);

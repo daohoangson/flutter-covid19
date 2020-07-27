@@ -9,6 +9,7 @@ environment:
 dependencies:
   charts_flutter:
   csv:
+  dio:
   flutter:
     sdk: flutter
   http:
