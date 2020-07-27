@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:covid19/api/api.dart';
 import 'package:covid19/widget/graph.dart';
 import 'package:flutter/foundation.dart';
