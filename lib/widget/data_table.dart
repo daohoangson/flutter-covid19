@@ -115,7 +115,7 @@ class _DataRow extends StatelessWidget {
         Expanded(
           child: Padding(
             child: Text(country.name),
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.symmetric(vertical: 8),
           ),
         ),
         _NumberWidget(
