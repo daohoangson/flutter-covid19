@@ -1,6 +1,7 @@
 import 'package:charts_flutter/flutter.dart' as charts;
 import 'package:covid19/api/api.dart';
 import 'package:flutter/material.dart';
+import 'package:implicitly_animated_reorderable_list/implicitly_animated_reorderable_list.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -72,13 +73,17 @@ class _DataTableState extends State<DataTableWidget> {
         if (showNew) _NumberBox(),
       ]),
       Expanded(
-        child: ListView.builder(
-          itemBuilder: (_, index) => _DataRow(
-            country: _sortedList[index],
-            showNew: showNew,
-            worldLatest: api.worldLatest,
+        child: ImplicitlyAnimatedList<ApiCountry>(
+          areItemsTheSame: (a, b) => a.code == b.code,
+          itemBuilder: (_, animation, country, ___) => SizeTransition(
+            child: _DataRow(
+              country: country,
+              showNew: showNew,
+              worldLatest: api.worldLatest,
+            ),
+            sizeFactor: animation,
           ),
-          itemCount: _sortedList.length,
+          items: _sortedList,
         ),
       ),
     ]);

@@ -13,6 +13,7 @@ dependencies:
   flutter:
     sdk: flutter
   http:
+  implicitly_animated_reorderable_list:
   intl:
   provider:
 
