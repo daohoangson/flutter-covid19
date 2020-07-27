@@ -54,11 +54,15 @@ class _WhoData {
 
 @immutable
 class _WhoProgress {
+  static const DOWNLOADING = 0.4;
+  static const PARSING = 0.6;
+
   final double value;
   _WhoProgress.downloading(int count, int total)
-      : value = (count / (total ?? 1500000.0)).clamp(0, 1) * .5;
+      : value =
+            (count / (total > 0 ? total : 1500000.0)).clamp(0, 1) * DOWNLOADING;
   _WhoProgress.parsing(Iterable<ApiCountry> countries)
-      : value = 0.5 + (countries.length / 250).clamp(0, 1) * .5;
+      : value = DOWNLOADING + (countries.length / 196).clamp(0, 1) * PARSING;
 }
 
 Future<_WhoData> _compute(_) async => _fetch();
