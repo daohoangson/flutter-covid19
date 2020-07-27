@@ -1,5 +1,6 @@
 import 'package:covid19/api/api.dart';
 import 'package:covid19/widget/graph.dart';
+import 'package:covid19/widget/map.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:implicitly_animated_reorderable_list/implicitly_animated_reorderable_list.dart';
@@ -19,20 +20,21 @@ class _DataTableState extends State<DataTableWidget> {
 
   @override
   Widget build(BuildContext _) => Consumer<Api>(
-        builder: (context, api, __) => api.isLoading
+        builder: (_, api, __) => api.isLoading
             ? Center(
                 child: CircularProgressIndicator(
                 value: kIsWeb ? null : api.progress,
               ))
             : api.hasData
-                ? SafeArea(child: _buildTable(context, api))
+                ? SafeArea(
+                    child: LayoutBuilder(
+                    builder: (_, bc) =>
+                        _buildTable(api, showNew: bc.maxWidth > 600),
+                  ))
                 : Text(api.error.toString()),
       );
 
-  Widget _buildTable(BuildContext context, Api api) {
-    final width = MediaQuery.of(context).size.width;
-    final showNew = width > 600;
-
+  Widget _buildTable(Api api, {bool showNew}) {
     if (_sortedOrder != order) {
       _sortedList = [...api.countries];
       _sortedList.sort((country1, country2) {
@@ -131,9 +133,12 @@ class _DataRow extends StatelessWidget {
   Widget build(BuildContext context) => Row(children: [
         _FlagWidget(country.code, key: ValueKey(country.code)),
         Expanded(
-          child: Padding(
-            child: Text(country.name),
-            padding: const EdgeInsets.symmetric(vertical: 8),
+          child: InkWell(
+            child: Padding(
+              child: Text(country.name),
+              padding: const EdgeInsets.symmetric(vertical: 8),
+            ),
+            onTap: () => MapData.of(context).animateCamera(country.code),
           ),
         ),
         _NumberWidget(

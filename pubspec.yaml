@@ -11,6 +11,7 @@ dependencies:
   dio:
   flutter:
     sdk: flutter
+  google_maps_flutter:
   http:
   implicitly_animated_reorderable_list:
   intl:
@@ -19,6 +20,18 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+
+dependency_overrides:
+  google_maps_flutter:
+    git:
+      url: https://github.com/daohoangson/plugins.git
+      ref: google_maps_flutter/heatmap
+      path: packages/google_maps_flutter/google_maps_flutter
+  google_maps_flutter_platform_interface:
+    git:
+      url: https://github.com/daohoangson/plugins.git
+      ref: google_maps_flutter/heatmap
+      path: packages/google_maps_flutter/google_maps_flutter_platform_interface
 
 flutter:
   assets:
