@@ -22,7 +22,10 @@ class _DataTableState extends State<DataTableWidget> {
   @override
   Widget build(BuildContext _) => Consumer<Api>(
         builder: (context, api, __) => api.isLoading
-            ? Center(child: CircularProgressIndicator(value: api.progress))
+            ? Center(
+                child: CircularProgressIndicator(
+                value: kIsWeb ? null : api.progress,
+              ))
             : api.hasData
                 ? SafeArea(child: _buildTable(context, api))
                 : Text(api.error.toString()),
