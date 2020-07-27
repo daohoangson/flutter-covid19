@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:covid19/api/api.dart';
 import 'package:covid19/widget/graph.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:implicitly_animated_reorderable_list/implicitly_animated_reorderable_list.dart';
 import 'package:intl/intl.dart';
@@ -50,6 +53,7 @@ class _DataTableState extends State<DataTableWidget> {
 
     return Column(children: [
       Row(children: [
+        const SizedBox(width: _FlagWidget.WIDTH),
         const Expanded(child: SizedBox.shrink()),
         _Header(
           (order == _SortOrder.deathsAsc
@@ -104,6 +108,7 @@ class _DataRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Row(children: [
+        _FlagWidget(country.code, key: ValueKey(country.code)),
         Expanded(
           child: Padding(
             child: Text(country.name),
@@ -151,6 +156,49 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) => InkWell(
         child: _NumberBox(child: _NumberText(data)),
         onTap: onTap,
+      );
+}
+
+class _FlagWidget extends StatefulWidget {
+  static const HEIGHT = 24.0;
+  static const WIDTH = 32.0;
+
+  final String iso;
+
+  const _FlagWidget(this.iso, {Key key}) : super(key: key);
+
+  @override
+  _FlagState createState() => _FlagState();
+}
+
+class _FlagState extends State<_FlagWidget> {
+  bool imageOk;
+
+  ImageProvider get image =>
+      AssetImage('gosquared/flags/flags-iso/flat/32/${widget.iso}.png');
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    imageOk = null;
+    precacheImage(
+      image,
+      context,
+      onError: (_, __) => mounted ? setState(() => imageOk = false) : null,
+    ).then((_) =>
+        mounted && imageOk == null ? setState(() => imageOk = true) : null);
+  }
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+        child: imageOk == true
+            ? Image(image: image)
+            : imageOk == false
+                ? Icon(Icons.warning, size: _FlagWidget.HEIGHT)
+                : null,
+        height: _FlagWidget.HEIGHT,
+        width: _FlagWidget.WIDTH,
       );
 }
 

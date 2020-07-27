@@ -21,4 +21,6 @@ dev_dependencies:
     sdk: flutter
 
 flutter:
+  assets:
+    - gosquared/flags/flags-iso/flat/32/
   uses-material-design: true

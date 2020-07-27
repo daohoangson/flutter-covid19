@@ -1,0 +1,3 @@
+[submodule "gosquared"]
+	path = gosquared
+	url = https://github.com/gosquared/flags.git
