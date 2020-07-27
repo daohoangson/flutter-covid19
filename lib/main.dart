@@ -1,5 +1,5 @@
 import 'package:covid19/api/who.dart';
-import 'package:covid19/widget/world.dart';
+import 'package:covid19/widget/data_table.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -12,9 +12,9 @@ class MyApp extends StatelessWidget {
         home: ChangeNotifierProvider.value(
           child: Scaffold(
             appBar: AppBar(
-              title: Text('Covid-19 Worldwide'),
+              title: Text('Covid-19 numbers worldwide'),
             ),
-            body: Covid19World(),
+            body: DataTableWidget(),
           ),
           value: WhoApi.getInstance(),
         ),
