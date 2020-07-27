@@ -3,7 +3,6 @@ import 'package:covid19/widget/graph.dart';
 import 'package:covid19/widget/map.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:implicitly_animated_reorderable_list/implicitly_animated_reorderable_list.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -100,17 +99,13 @@ class _DataTableState extends State<DataTableWidget> {
         if (showNew) _NumberBox(),
       ]),
       Expanded(
-        child: ImplicitlyAnimatedList<ApiCountry>(
-          areItemsTheSame: (a, b) => a.code == b.code,
-          itemBuilder: (_, animation, country, ___) => SizeTransition(
-            child: _DataRow(
-              country: country,
-              showNew: showNew,
-              worldLatest: api.worldLatest,
-            ),
-            sizeFactor: animation,
+        child: ListView.builder(
+          itemBuilder: (_, index) => _DataRow(
+            dts: this,
+            index: index,
+            showNew: showNew,
           ),
-          items: _sortedList,
+          itemCount: _sortedList.length,
         ),
       ),
     ]);
@@ -118,16 +113,18 @@ class _DataTableState extends State<DataTableWidget> {
 }
 
 class _DataRow extends StatelessWidget {
-  final ApiCountry country;
+  final _DataTableState dts;
+  final int index;
   final bool showNew;
-  final ApiRecord worldLatest;
 
   const _DataRow({
+    @required this.dts,
+    @required this.index,
     Key key,
-    this.country,
     this.showNew,
-    this.worldLatest,
   }) : super(key: key);
+
+  ApiCountry get country => dts._sortedList[index];
 
   @override
   Widget build(BuildContext context) => Row(children: [
@@ -135,7 +132,7 @@ class _DataRow extends StatelessWidget {
         Expanded(
           child: InkWell(
             child: Padding(
-              child: Text(country.name),
+              child: Text('${index + 1}. ${country.name}'),
               padding: const EdgeInsets.symmetric(vertical: 8),
             ),
             onTap: () => MapData.of(context).animateCamera(country.code),

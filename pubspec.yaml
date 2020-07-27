@@ -13,7 +13,6 @@ dependencies:
     sdk: flutter
   google_maps_flutter:
   http:
-  implicitly_animated_reorderable_list:
   intl:
   provider:
 
