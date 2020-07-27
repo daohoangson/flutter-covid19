@@ -35,19 +35,39 @@ class _DataTableState extends State<DataTableWidget> {
 
     if (_sortedOrder != order) {
       _sortedList = [...api.countries];
-      _sortedList.sort((a, b) {
+      _sortedList.sort((country1, country2) {
+        var cmp = 0;
+        final a = country1.latest;
+        final b = country2.latest;
+
         switch (order) {
           case _SortOrder.casesAsc:
-            return a.latest.casesTotal.compareTo(b.latest.casesTotal);
+            cmp = a.casesTotal.compareTo(b.casesTotal);
+            if (cmp == 0) {
+              cmp = a.deathsTotal.compareTo(b.deathsTotal);
+            }
+            break;
           case _SortOrder.casesDesc:
-            return b.latest.casesTotal.compareTo(a.latest.casesTotal);
+            cmp = b.casesTotal.compareTo(a.casesTotal);
+            if (cmp == 0) {
+              cmp = b.deathsTotal.compareTo(a.deathsTotal);
+            }
+            break;
           case _SortOrder.deathsAsc:
-            return a.latest.deathsTotal.compareTo(b.latest.deathsTotal);
+            cmp = a.deathsTotal.compareTo(b.deathsTotal);
+            if (cmp == 0) {
+              cmp = a.casesTotal.compareTo(b.casesTotal);
+            }
+            break;
           case _SortOrder.deathsDesc:
-            return b.latest.deathsTotal.compareTo(a.latest.deathsTotal);
+            cmp = b.deathsTotal.compareTo(a.deathsTotal);
+            if (cmp == 0) {
+              cmp = b.casesTotal.compareTo(a.casesTotal);
+            }
+            break;
         }
 
-        return 0;
+        return cmp;
       });
       _sortedOrder = order;
     }
