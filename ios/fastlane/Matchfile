@@ -1,0 +1,3 @@
+google_cloud_bucket_name("covid19-by-daohoangson-fastlane-match")
+storage_mode("google_cloud")
+type("development")
