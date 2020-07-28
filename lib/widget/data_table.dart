@@ -1,6 +1,5 @@
 import 'package:covid19/api/api.dart';
 import 'package:covid19/widget/graph.dart';
-import 'package:covid19/widget/map.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -71,17 +70,6 @@ class _DataTableState extends State<DataTableWidget> {
         return cmp;
       });
       _sortedOrder = order;
-
-      WidgetsBinding.instance
-          .addPostFrameCallback((_) => MapData.of(context).heatmap = Heatmap(
-                points: _sortedList.map((country) => HeatmapPoint(
-                      countryCode: country.code,
-                      value: _sortedOrder == _SortOrder.casesAsc ||
-                              _sortedOrder == _SortOrder.casesDesc
-                          ? country.latest.casesTotal
-                          : country.latest.deathsTotal,
-                    )),
-              ));
     }
 
     return Column(children: [
@@ -141,12 +129,9 @@ class _DataRow extends StatelessWidget {
   Widget build(BuildContext context) => Row(children: [
         _FlagWidget(country.code, key: ValueKey(country.code)),
         Expanded(
-          child: InkWell(
-            child: Padding(
-              child: Text('${index + 1}. ${country.name}'),
-              padding: const EdgeInsets.symmetric(vertical: 8),
-            ),
-            onTap: () => MapData.of(context).animateCamera(country.code),
+          child: Padding(
+            child: Text('${index + 1}. ${country.name}'),
+            padding: const EdgeInsets.symmetric(vertical: 8),
           ),
         ),
         _NumberWidget(
