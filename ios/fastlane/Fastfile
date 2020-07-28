@@ -1,0 +1,32 @@
+default_platform(:ios)
+
+platform :ios do
+  lane :ipa do
+    desc "Build ad-hoc ipa"
+
+    setup_ci
+    commit = last_git_commit
+
+    sync_code_signing(
+      type: "adhoc",
+      readonly: true
+    )
+
+    build_app(
+      workspace: "Runner.xcworkspace",
+      scheme: "Runner",
+
+      xcargs: "PROVISIONING_PROFILE_SPECIFIER='match AdHoc com.daohoangson.covid19'",
+
+      export_options: {
+        method: "ad-hoc",
+        manifest: {
+          appURL: "https://storage.googleapis.com/covid19-by-daohoangson/#{commit[:commit_hash]}/ipa/Runner.ipa",
+          displayImageURL: "https://github.com/daohoangson/flutter-covid19/raw/master/ios/fastlane/flutter_57.png",
+          fullSizeImageURL: "https://github.com/daohoangson/flutter-covid19/raw/master/ios/fastlane/flutter_512.png"
+        }
+      },
+      output_directory: "../build/app/outputs/ipa/release"
+    )
+  end
+end
