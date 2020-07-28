@@ -1,26 +1,34 @@
 import 'dart:math';
 
-import 'package:covid19/api/worldSvg.dart';
+import 'package:covid19/api/api.dart';
+import 'package:covid19/api/world_svg.dart' as world_svg;
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class MapWidget extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Padding(
-        child: RepaintBoundary(child: CustomPaint(painter: _Painter())),
-        padding: const EdgeInsets.all(8),
+  Widget build(BuildContext _) => Consumer<Api>(
+        builder: (_, api, __) => Padding(
+          child: CustomPaint(
+            painter: _Painter(
+              api.hasData ? api.countries : null,
+            ),
+          ),
+          padding: const EdgeInsets.all(8),
+        ),
       );
 }
 
 class MapData extends ChangeNotifier {}
 
 class _Painter extends CustomPainter {
+  final Iterable<ApiCountry> countries;
+
+  _Painter(this.countries);
+
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.black
-      ..style = PaintingStyle.stroke;
-
-    final ratio = kWorldSvgWidth / kWorldSvgHeight;
+    final ratio = world_svg.kWidth / world_svg.kHeight;
     var width = size.width;
     var height = width / ratio;
     if (height > size.height) {
@@ -29,15 +37,98 @@ class _Painter extends CustomPainter {
     }
 
     canvas.translate((size.width - width) / 2, (size.height - height) / 2);
-    canvas.scale(width / kWorldSvgWidth, height / kWorldSvgHeight);
+    canvas.scale(width / world_svg.kWidth, height / world_svg.kHeight);
 
-    for (final countryCode in kWorldSvgCountries.keys) {
-      _paint(canvas, paint, kWorldSvgCountries[countryCode].split(' '));
+    if (countries != null) {
+      for (final country in countries) {
+        final v = (log(country.latest.casesTotal) / log(2))
+            .clamp(1, _paints.length - 1)
+            .toInt();
+        _paint(canvas, _paints[v],
+            world_svg.getCommandsByCountryCode(country.code));
+      }
+    } else {
+      for (final code in world_svg.getAvailableCountryCodes()) {
+        _paint(canvas, _paints[0], world_svg.getCommandsByCountryCode(code));
+      }
     }
   }
 
   @override
-  bool shouldRepaint(_Painter oldDelegate) => false;
+  bool shouldRepaint(_Painter other) =>
+      (countries == null) != (other.countries == null);
+
+  static final _paints = <Paint>[
+    Paint()
+      ..color = Colors.black
+      ..style = PaintingStyle.stroke,
+    Paint()
+      ..color = Colors.green
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.green
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.green
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.lime
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.lime
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.lime
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.yellow[300]
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.yellow[300]
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.yellow[500]
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.yellow[500]
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.yellow[700]
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.yellow[700]
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.orange[500]
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.orange[500]
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.orange[700]
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.orange[700]
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.red[500]
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.red[500]
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.red[700]
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.red[700]
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.red[900]
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.red[900]
+      ..style = PaintingStyle.fill,
+  ];
 
   static void _paint(Canvas canvas, Paint paint, Iterable<String> commands) {
     var pathCount = 0;
