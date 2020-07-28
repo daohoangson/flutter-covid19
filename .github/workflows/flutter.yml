@@ -52,7 +52,9 @@ jobs:
             echo '### Android builds'; \
             echo '```'; \
             flutter doctor; \
+            echo; \
             cat android/local.properties; \
+            echo; \
             echo '```'; \
             echo; \
             ls build/app/outputs/apk/release/*.apk \
@@ -116,15 +118,17 @@ jobs:
             echo '### iOS build'; \
             echo '```'; \
             flutter doctor; \
+            echo; \
             cat ios/Flutter/Generated.xcconfig; \
+            echo; \
             echo '```'; \
             echo; \
             printf '[manifest.plist](%s)' "${GCS_URL}/ipa/redirect.html"; \
           )
 
-          _message="${_message//'%'/'%25'}"
-          _message="${_message//$'\n'/'%0A'}"
-          _message="${_message//$'\r'/'%0D'}"
+          _message="${_message//'%'/%25}"
+          _message="${_message//$'\n'/%0A}"
+          _message="${_message//$'\r'/%0D}"
           echo "::set-output name=MESSAGE::${_message}"
       - name: Post GitHub comment
         uses: daohoangson/comment-on-github@v2
