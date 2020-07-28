@@ -1,9 +1,10 @@
-on: push
 name: Flutter
+
+on: 
+  push:
 env:
   GCS_PATH: gs://covid19-by-daohoangson/${{ github.sha }}
   GCS_URL: https://storage.googleapis.com/covid19-by-daohoangson/${{ github.sha }}
-  JAVA_VERSION: 12.x
   SCRIPT_PREPARE_REPO: |
     set -e
 
