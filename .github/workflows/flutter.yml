@@ -1,0 +1,73 @@
+name: Flutter
+
+on: 
+  push:
+env:
+  GCS_PATH: gs://covid19-by-daohoangson/${{ github.sha }}
+  GCS_URL: https://storage.googleapis.com/covid19-by-daohoangson/${{ github.sha }}
+  SCRIPT_PREPARE_REPO: |
+    set -e
+
+    git submodule update --init --recursive
+
+    # Unlock git-crypt
+    brew install git-crypt
+    echo "${{ secrets.GIT_CRYPT_KEY_BASE64 }}" | base64 --decode > ./git-crypt-key
+    git-crypt unlock ./git-crypt-key
+    rm ./git-crypt-key
+
+    # Extract config from pubspec.yaml
+    brew install yq
+    _appVersion=$( yq read pubspec.yaml version )
+    _appVersionWithoutNumber=$( echo "${_appVersion}" | sed 's/+.*$//' )
+    echo "::set-env name=BUILD_NAME::${_appVersionWithoutNumber}-${GITHUB_SHA:0:7}"
+
+jobs:
+  build_apk:
+    name: Build APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Prepare repo
+        run: echo "${SCRIPT_PREPARE_REPO}" | bash -
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v1
+      - run: flutter pub get
+      - run: flutter build apk "--build-name=${BUILD_NAME}" --split-per-abi
+
+      - name: Setup gcloud
+        uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+        with:
+          service_account_key: ${{ secrets.SERVICE_ACCOUNT_KEY_BASE64 }}
+      - name: Run gsutil cp
+        run: gsutil cp build/app/outputs/apk/release/*.apk "${GCS_PATH}/apk"
+
+      - name: Prepare markdown
+        id: markdown
+        run: |
+          set -e
+
+          _message=$( \
+            echo '### Android builds'; \
+            echo '```'; \
+            flutter doctor; \
+            echo "BUILD_NAME=${BUILD_NAME}"; \
+            echo '```'; \
+            echo; \
+            ls build/app/outputs/apk/release/*.apk \
+              | xargs -n 1 basename \
+              | xargs -n 1 -I {} printf -- "- [%s](${GCS_URL}/apk/%s)\n" {} {}; \
+          )
+
+          _message="${_message//'%'/'%25'}"
+          _message="${_message//$'\n'/'%0A'}"
+          _message="${_message//$'\r'/'%0D'}"
+          echo "::set-output name=MESSAGE::${_message}"
+      - name: Post GitHub comment
+        uses: daohoangson/comment-on-github@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          body: ${{ steps.markdown.outputs.MESSAGE }}
+          fingerprint: <!-- ${{ github.sha }} -->
