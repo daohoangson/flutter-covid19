@@ -93,19 +93,19 @@ packages:
     description:
       path: "packages/google_maps_flutter/google_maps_flutter"
       ref: "google_maps_flutter/heatmap"
-      resolved-ref: d8161e410a64edb594b2cb1e675124fb05b5e3c9
+      resolved-ref: "52a52f2e12098b49facf67c0d991a5d7fd85596d"
       url: "https://github.com/daohoangson/plugins.git"
     source: git
-    version: "0.5.27"
+    version: "0.5.28+3"
   google_maps_flutter_platform_interface:
     dependency: "direct overridden"
     description:
       path: "packages/google_maps_flutter/google_maps_flutter_platform_interface"
       ref: "google_maps_flutter/heatmap"
-      resolved-ref: d8161e410a64edb594b2cb1e675124fb05b5e3c9
+      resolved-ref: "52a52f2e12098b49facf67c0d991a5d7fd85596d"
       url: "https://github.com/daohoangson/plugins.git"
     source: git
-    version: "1.0.1"
+    version: "1.0.2"
   http:
     dependency: "direct main"
     description:
