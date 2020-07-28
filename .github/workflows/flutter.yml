@@ -10,6 +10,12 @@ env:
 
     git submodule update --init --recursive
 
+    # Unlock git-crypt
+    brew install git-crypt
+    echo "${{ secrets.GIT_CRYPT_KEY_BASE64 }}" | base64 --decode > ./git-crypt-key
+    git-crypt unlock ./git-crypt-key
+    rm ./git-crypt-key
+
     # Extract config from pubspec.yaml
     brew install yq
     _appVersion=$( yq read pubspec.yaml version )
