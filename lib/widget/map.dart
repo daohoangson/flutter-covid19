@@ -1,18 +1,21 @@
 import 'dart:math';
 
 import 'package:covid19/api/api.dart';
+import 'package:covid19/api/sort.dart';
 import 'package:covid19/api/world_svg.dart' as world_svg;
+import 'package:covid19/widget/table.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class MapWidget extends StatelessWidget {
   @override
-  Widget build(BuildContext _) => Consumer2<Api, MapData>(
-        builder: (_, api, data, __) => Padding(
+  Widget build(BuildContext _) => Consumer3<Api, MapData, TableData>(
+        builder: (_, api, data, table, __) => Padding(
           child: LayoutBuilder(
             builder: (_, bc) => _CustomPaint(
               countries: api.hasData ? api.countries : null,
               highlight: data._highlightCountryCode,
+              order: table.order,
               size: bc.biggest,
             ),
           ),
@@ -40,12 +43,14 @@ class MapData extends ChangeNotifier {
 class _CustomPaint extends StatefulWidget {
   final Iterable<ApiCountry> countries;
   final String highlight;
+  final SortOrder order;
   final Size size;
 
   const _CustomPaint({
     this.countries,
     this.highlight,
     Key key,
+    this.order,
     @required this.size,
   }) : super(key: key);
 
@@ -85,6 +90,7 @@ class _CustomPaintState extends State<_CustomPaint>
           painter: _Painter(
             countries: widget.countries,
             focusPoint: focusPoint?.value ?? centerPoint,
+            order: widget.order,
             scale: scale?.value ?? 1,
           ),
         ),
@@ -176,11 +182,13 @@ class _CustomPaintState extends State<_CustomPaint>
 class _Painter extends CustomPainter {
   final Iterable<ApiCountry> countries;
   final Offset focusPoint;
+  final SortOrder order;
   final double scale;
 
   _Painter({
     this.countries,
     this.focusPoint,
+    this.order,
     this.scale,
   });
 
@@ -206,7 +214,7 @@ class _Painter extends CustomPainter {
     if (countries != null) {
       for (final country in countries) {
         final commands = world_svg.getCommandsByCountryCode(country.code);
-        final seriousness = (log(country.latest.casesTotal) / log(2))
+        final seriousness = (log(order.measure(country.latest)) / log(2))
             .clamp(1, _paints.length - 1)
             .toInt();
         _paint(canvas, _paints[seriousness], commands);
@@ -222,6 +230,7 @@ class _Painter extends CustomPainter {
   bool shouldRepaint(_Painter other) =>
       ((countries == null) != (other.countries == null)) ||
       focusPoint != other.focusPoint ||
+      order != other.order ||
       scale != other.scale;
 
   static final _paints = <Paint>[

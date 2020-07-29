@@ -1,4 +1,5 @@
 import 'package:covid19/api/api.dart';
+import 'package:covid19/api/sort.dart';
 import 'package:covid19/widget/graph.dart';
 import 'package:covid19/widget/map.dart';
 import 'package:flutter/foundation.dart';
@@ -6,20 +7,31 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-class DataTableWidget extends StatefulWidget {
+class TableWidget extends StatefulWidget {
   @override
-  _DataTableState createState() => _DataTableState();
+  _TableState createState() => _TableState();
 }
 
-class _DataTableState extends State<DataTableWidget> {
-  _SortOrder order = _SortOrder.deathsDesc;
+class TableData extends ChangeNotifier {
+  SortOrder __order = deathsTotalDesc;
+  SortOrder get order => __order;
+  set _order(SortOrder v) {
+    if (v == __order) return;
+    __order = v;
+    notifyListeners();
+  }
 
-  _SortOrder _sortedOrder;
+  static TableData of(BuildContext context) =>
+      Provider.of<TableData>(context, listen: false);
+}
+
+class _TableState extends State<TableWidget> {
+  SortOrder _sortedOrder;
   List<ApiCountry> _sortedList;
 
   @override
-  Widget build(BuildContext _) => Consumer<Api>(
-        builder: (_, api, __) => api.isLoading
+  Widget build(BuildContext _) => Consumer2<Api, TableData>(
+        builder: (_, api, data, __) => api.isLoading
             ? Center(
                 child: CircularProgressIndicator(
                 value: kIsWeb ? null : api.progress,
@@ -27,49 +39,15 @@ class _DataTableState extends State<DataTableWidget> {
             : api.hasData
                 ? SafeArea(
                     child: LayoutBuilder(
-                    builder: (_, bc) =>
-                        _buildTable(api, showNew: bc.maxWidth > 600),
+                    builder: (_, bc) => _buildTable(api, data.order,
+                        showNew: bc.maxWidth > 600),
                   ))
                 : Text(api.error.toString()),
       );
 
-  Widget _buildTable(Api api, {bool showNew}) {
+  Widget _buildTable(Api api, SortOrder order, {bool showNew}) {
     if (_sortedOrder != order) {
-      _sortedList = [...api.countries];
-      _sortedList.sort((country1, country2) {
-        var cmp = 0;
-        final a = country1.latest;
-        final b = country2.latest;
-
-        switch (order) {
-          case _SortOrder.casesAsc:
-            cmp = a.casesTotal.compareTo(b.casesTotal);
-            if (cmp == 0) {
-              cmp = a.deathsTotal.compareTo(b.deathsTotal);
-            }
-            break;
-          case _SortOrder.casesDesc:
-            cmp = b.casesTotal.compareTo(a.casesTotal);
-            if (cmp == 0) {
-              cmp = b.deathsTotal.compareTo(a.deathsTotal);
-            }
-            break;
-          case _SortOrder.deathsAsc:
-            cmp = a.deathsTotal.compareTo(b.deathsTotal);
-            if (cmp == 0) {
-              cmp = a.casesTotal.compareTo(b.casesTotal);
-            }
-            break;
-          case _SortOrder.deathsDesc:
-            cmp = b.deathsTotal.compareTo(a.deathsTotal);
-            if (cmp == 0) {
-              cmp = b.casesTotal.compareTo(a.casesTotal);
-            }
-            break;
-        }
-
-        return cmp;
-      });
+      _sortedList = order.sort(api.countries);
       _sortedOrder = order;
     }
 
@@ -78,30 +56,28 @@ class _DataTableState extends State<DataTableWidget> {
         const SizedBox(width: _FlagWidget.WIDTH),
         const Expanded(child: SizedBox.shrink()),
         _Header(
-          (order == _SortOrder.deathsAsc
+          (order == deathsTotalAsc
                   ? '↑ '
-                  : order == _SortOrder.deathsDesc ? '↓ ' : '') +
+                  : order == deathsTotalDesc ? '↓ ' : '') +
               'Deaths',
-          onTap: () => setState(() => order = order == _SortOrder.deathsDesc
-              ? _SortOrder.deathsAsc
-              : _SortOrder.deathsDesc),
+          onTap: () => setState(() => TableData.of(context)._order =
+              order == deathsTotalDesc ? deathsTotalAsc : deathsTotalDesc),
         ),
         if (showNew) _NumberBox(),
         _Header(
-          (order == _SortOrder.casesAsc
+          (order == casesTotalAsc
                   ? '↑ '
-                  : order == _SortOrder.casesDesc ? '↓ ' : '') +
+                  : order == casesTotalDesc ? '↓ ' : '') +
               'Cases',
-          onTap: () => setState(() => order = order == _SortOrder.casesDesc
-              ? _SortOrder.casesAsc
-              : _SortOrder.casesDesc),
+          onTap: () => setState(() => TableData.of(context)._order =
+              order == casesTotalDesc ? casesTotalAsc : casesTotalDesc),
         ),
         if (showNew) _NumberBox(),
       ]),
       Expanded(
         child: ListView.builder(
           itemBuilder: (_, index) => _DataRow(
-            dts: this,
+            country: _sortedList[index],
             index: index,
             showNew: showNew,
           ),
@@ -113,18 +89,16 @@ class _DataTableState extends State<DataTableWidget> {
 }
 
 class _DataRow extends StatelessWidget {
-  final _DataTableState dts;
+  final ApiCountry country;
   final int index;
   final bool showNew;
 
   const _DataRow({
-    @required this.dts,
+    @required this.country,
     @required this.index,
     Key key,
     this.showNew,
   }) : super(key: key);
-
-  ApiCountry get country => dts._sortedList[index];
 
   @override
   Widget build(BuildContext context) => Row(children: [
@@ -291,13 +265,6 @@ class _NumberWidget extends StatelessWidget {
           ],
         ),
       );
-}
-
-enum _SortOrder {
-  casesAsc,
-  casesDesc,
-  deathsAsc,
-  deathsDesc,
 }
 
 String _formatNumber(int v) => NumberFormat.compact().format(v);

@@ -1,6 +1,6 @@
 import 'package:covid19/api/who.dart';
-import 'package:covid19/widget/data_table.dart';
 import 'package:covid19/widget/map.dart';
+import 'package:covid19/widget/table.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -20,6 +20,7 @@ class MyApp extends StatelessWidget {
           providers: [
             ChangeNotifierProvider.value(value: WhoApi.getInstance()),
             ChangeNotifierProvider(create: (_) => MapData()),
+            ChangeNotifierProvider(create: (_) => TableData()),
           ],
         ),
       );
@@ -35,7 +36,7 @@ class _Body extends StatelessWidget {
                     aspectRatio: 16 / 9,
                     child: MapWidget(),
                   ),
-                  Expanded(child: DataTableWidget()),
+                  Expanded(child: TableWidget()),
                 ],
               )
             : Row(
@@ -44,7 +45,7 @@ class _Body extends StatelessWidget {
                     aspectRatio: 1,
                     child: MapWidget(),
                   ),
-                  Expanded(child: DataTableWidget()),
+                  Expanded(child: TableWidget()),
                 ],
               ),
       );
