@@ -165,7 +165,7 @@ jobs:
         with:
           service_account_key: ${{ secrets.SERVICE_ACCOUNT_KEY_BASE64 }}
       - name: Run gsutil cp
-        run: gsutil cp build/web/* "${GCS_PATH}/web/"
+        run: gsutil cp -r build/web "${GCS_PATH}"
 
       - name: Prepare markdown
         id: markdown
@@ -179,7 +179,7 @@ jobs:
             echo; \
             echo '```'; \
             echo; \
-            echo "[Open](${GCS_URL}/web/)" \
+            echo "[Open](${GCS_URL}/web/index.html)" \
           )
 
           _message="${_message//'%'/'%25'}"
