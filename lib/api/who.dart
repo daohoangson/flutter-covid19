@@ -74,7 +74,7 @@ void _isolate(SendPort sendPort) async {
 
 Future<_WhoData> _fetch({SendPort sendPort}) async {
   final whoUrl = WhoApi.CSV_URL;
-  final url = kIsWeb ? 'https://cors-anywhere.herokuapp.com/$whoUrl' : whoUrl;
+  final url = kIsWeb ? 'https://cors-anywhere-by-daohoangson.herokuapp.com/$whoUrl' : whoUrl;
   final response = await Dio().getUri<String>(
     Uri.parse(url),
     onReceiveProgress: (count, total) =>
