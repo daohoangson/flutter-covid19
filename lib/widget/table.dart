@@ -116,7 +116,7 @@ class _DataRow extends StatelessWidget {
         _NumberWidget(
           color: Colors.red,
           country: country,
-          graphMode: GraphMode.LINE,
+          graphMode: GraphMode.line,
           measureFn: (record) => record.deathsTotal,
         ),
         if (showNew)
@@ -124,13 +124,13 @@ class _DataRow extends StatelessWidget {
             color: Colors.orange,
             country: country,
             data: '+${_formatNumber(country.latest.deathsNew)}',
-            graphMode: GraphMode.BAR,
+            graphMode: GraphMode.bar,
             measureFn: (record) => record.deathsNew,
           ),
         _NumberWidget(
           color: Colors.green,
           country: country,
-          graphMode: GraphMode.LINE,
+          graphMode: GraphMode.line,
           measureFn: (record) => record.casesTotal,
         ),
         if (showNew)
@@ -138,7 +138,7 @@ class _DataRow extends StatelessWidget {
             color: Colors.lime,
             country: country,
             data: '+${_formatNumber(country.latest.casesNew)}',
-            graphMode: GraphMode.BAR,
+            graphMode: GraphMode.bar,
             measureFn: (record) => record.casesNew,
           ),
       ]);

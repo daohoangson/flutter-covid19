@@ -75,11 +75,11 @@ class _Painter extends CustomPainter {
       final offset = Offset(x * xScale, size.height - y * yScale);
 
       switch (mode) {
-        case GraphMode.BAR:
+        case GraphMode.bar:
           canvas.drawRect(
               Rect.fromLTRB(prev.dx, offset.dy, offset.dx, size.height), paint);
           break;
-        case GraphMode.LINE:
+        case GraphMode.line:
           canvas.drawLine(prev, offset, paint);
           break;
       }
@@ -94,6 +94,6 @@ class _Painter extends CustomPainter {
 }
 
 enum GraphMode {
-  BAR,
-  LINE,
+  bar,
+  line,
 }
