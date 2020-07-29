@@ -141,3 +141,55 @@ jobs:
         with:
           body: ${{ steps.markdown.outputs.MESSAGE }}
           fingerprint: <!-- ${{ github.sha }} -->
+
+  build_web:
+    name: Build Web
+    if: github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/web/') || startsWith(github.ref, 'refs/heads/feat/') || startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Prepare repo
+        run: echo "${SCRIPT_PREPARE_REPO}" | bash -
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v1
+        with:
+          channel: beta
+      - run: flutter config --enable-web
+      - run: flutter pub get
+      - run: flutter build web
+
+      - name: Setup gcloud
+        uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+        with:
+          service_account_key: ${{ secrets.SERVICE_ACCOUNT_KEY_BASE64 }}
+      - name: Run gsutil cp
+        run: gsutil cp -r build/web "${GCS_PATH}/web"
+
+      - name: Prepare markdown
+        id: markdown
+        run: |
+          set -e
+
+          _message=$( \
+            echo '### Web build'; \
+            echo '```'; \
+            flutter doctor; \
+            echo; \
+            echo '```'; \
+            echo; \
+            echo "[Open](${GCS_URL}/web/index.html)" \
+          )
+
+          _message="${_message//'%'/'%25'}"
+          _message="${_message//$'\n'/'%0A'}"
+          _message="${_message//$'\r'/'%0D'}"
+          echo "::set-output name=MESSAGE::${_message}"
+      - name: Post GitHub comment
+        uses: daohoangson/comment-on-github@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          body: ${{ steps.markdown.outputs.MESSAGE }}
+          fingerprint: <!-- ${{ github.sha }} -->

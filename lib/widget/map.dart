@@ -46,7 +46,7 @@ class MapWidget extends StatelessWidget {
                     icon: Icon(Icons.close),
                     onPressed: () => data.highlightCountryCode = null,
                   ),
-                  end: 0,
+                  start: 0,
                   textDirection: Directionality.of(context),
                 ),
             ],
