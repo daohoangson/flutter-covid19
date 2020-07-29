@@ -179,7 +179,7 @@ jobs:
             echo; \
             echo '```'; \
             echo; \
-            echo '[Open](${GCS_URL}/web/)' \
+            echo "[Open](${GCS_URL}/web/)" \
           )
 
           _message="${_message//'%'/'%25'}"
