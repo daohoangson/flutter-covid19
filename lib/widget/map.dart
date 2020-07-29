@@ -9,10 +9,11 @@ class MapWidget extends StatelessWidget {
   @override
   Widget build(BuildContext _) => Consumer2<Api, MapData>(
         builder: (_, api, data, __) => Padding(
-          child: CustomPaint(
-            painter: _Painter(
+          child: LayoutBuilder(
+            builder: (_, bc) => _CustomPaint(
               countries: api.hasData ? api.countries : null,
               highlight: data._highlightCountryCode,
+              size: bc.biggest,
             ),
           ),
           padding: const EdgeInsets.all(8),
@@ -36,13 +37,151 @@ class MapData extends ChangeNotifier {
       Provider.of<MapData>(context, listen: false);
 }
 
-class _Painter extends CustomPainter {
+class _CustomPaint extends StatefulWidget {
   final Iterable<ApiCountry> countries;
   final String highlight;
+  final Size size;
+
+  const _CustomPaint({
+    this.countries,
+    this.highlight,
+    Key key,
+    @required this.size,
+  }) : super(key: key);
+
+  @override
+  State<StatefulWidget> createState() => _CustomPaintState();
+}
+
+class _CustomPaintState extends State<_CustomPaint>
+    with TickerProviderStateMixin {
+  static const centerPoint =
+      Offset(world_svg.kWidth / 2, world_svg.kHeight / 2);
+
+  AnimationController _controller;
+
+  Animation<Offset> focusPoint;
+  Animation<double> scale;
+
+  @override
+  initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      vsync: this,
+    )..addListener(() => setState(() {}));
+  }
+
+  @override
+  dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => SizedBox.fromSize(
+        child: CustomPaint(
+          painter: _Painter(
+            countries: widget.countries,
+            focusPoint: focusPoint?.value ?? centerPoint,
+            scale: scale?.value ?? 1,
+          ),
+        ),
+        size: widget.size,
+      );
+
+  @override
+  void didUpdateWidget(_CustomPaint oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (widget.highlight != oldWidget.highlight) {
+      final code = widget.highlight;
+      final rect = _getCountryRect(code);
+      final focusBegin = focusPoint?.value ?? centerPoint;
+      final focusEnd = rect != null ? rect.center : centerPoint;
+      focusPoint = Tween<Offset>(
+        begin: focusBegin,
+        end: focusEnd,
+      ).animate(_controller);
+
+      final scaleBegin = scale?.value ?? 1.0;
+      final scaleEnd =
+          rect != null ? _calculateScaleToFit(rect, widget.size) : 1.0;
+      scale = Tween<double>(
+        begin: scaleBegin,
+        end: scaleEnd,
+      ).animate(_controller);
+
+      _controller
+        ..reset()
+        ..forward();
+    }
+  }
+
+  static double _calculateScaleToFit(Rect rect, Size size) {
+    final ratio = rect.width / rect.height;
+    var width = size.width;
+    var height = width / ratio;
+    if (height > size.height) {
+      height = size.height;
+      width = height * ratio;
+    }
+
+    return world_svg.kWidth / width;
+  }
+
+  static Rect _getCountryRect(String countryCode) {
+    final commands = world_svg.getCommandsByCountryCode(countryCode);
+    if (commands.isEmpty) return null;
+
+    Offset prev;
+    double xMin, xMax, yMin, yMax;
+    Rect bestRect;
+
+    final i = commands.iterator;
+    while (i.moveNext()) {
+      final command = i.current;
+      switch (command) {
+        case 'm':
+          if (i.moveNext()) {
+            final offset =
+                (prev ?? Offset(0, 0)) + _Painter._parseOffset(i.current);
+            prev = offset;
+            xMin = xMax = offset.dx;
+            yMin = yMax = offset.dy;
+          }
+          break;
+        case 'z':
+          final rect = Rect.fromLTRB(xMin, yMin, xMax, yMax);
+          if (bestRect == null ||
+              rect.width * rect.height > bestRect.width * bestRect.height) {
+            bestRect = rect;
+          }
+          break;
+        default:
+          final offset = prev + _Painter._parseOffset(command);
+          prev = offset;
+          xMin = min(xMin, offset.dx);
+          xMax = max(xMax, offset.dx);
+          yMin = min(yMin, offset.dy);
+          yMax = max(yMax, offset.dy);
+      }
+    }
+
+    return bestRect;
+  }
+}
+
+class _Painter extends CustomPainter {
+  final Iterable<ApiCountry> countries;
+  final Offset focusPoint;
+  final double scale;
 
   _Painter({
     this.countries,
-    this.highlight,
+    this.focusPoint,
+    this.scale,
   });
 
   @override
@@ -58,16 +197,19 @@ class _Painter extends CustomPainter {
     canvas.translate((size.width - width) / 2, (size.height - height) / 2);
     canvas.scale(width / world_svg.kWidth, height / world_svg.kHeight);
 
+    canvas.translate(
+      (world_svg.kWidth / 2 - focusPoint.dx * scale),
+      (world_svg.kHeight / 2 - focusPoint.dy * scale),
+    );
+    if (scale != 1) canvas.scale(scale);
+
     if (countries != null) {
       for (final country in countries) {
         final commands = world_svg.getCommandsByCountryCode(country.code);
         final seriousness = (log(country.latest.casesTotal) / log(2))
             .clamp(1, _paints.length - 1)
             .toInt();
-        final paint = (highlight == null || highlight == country.code)
-            ? _paints[seriousness]
-            : _paints[0];
-        _paint(canvas, paint, commands);
+        _paint(canvas, _paints[seriousness], commands);
       }
     } else {
       for (final code in world_svg.getAvailableCountryCodes()) {
@@ -79,7 +221,8 @@ class _Painter extends CustomPainter {
   @override
   bool shouldRepaint(_Painter other) =>
       ((countries == null) != (other.countries == null)) ||
-      highlight != other.highlight;
+      focusPoint != other.focusPoint ||
+      scale != other.scale;
 
   static final _paints = <Paint>[
     Paint()
