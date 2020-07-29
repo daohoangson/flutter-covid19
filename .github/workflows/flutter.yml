@@ -165,7 +165,7 @@ jobs:
         with:
           service_account_key: ${{ secrets.SERVICE_ACCOUNT_KEY_BASE64 }}
       - name: Run gsutil cp
-        run: gsutil cp -r build/web "${GCS_PATH}"
+        run: gsutil cp -r build/web "${GCS_PATH}/web"
 
       - name: Prepare markdown
         id: markdown
