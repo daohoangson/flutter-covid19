@@ -29,14 +29,27 @@ class MapProgressIndicator extends StatelessWidget {
 class MapWidget extends StatelessWidget {
   @override
   Widget build(BuildContext _) => Consumer3<Api, MapData, TableData>(
-        builder: (_, api, data, table, __) => Padding(
-          child: LayoutBuilder(
-            builder: (_, bc) => _CustomPaint(
-              countries: api.hasData ? api.countries : null,
-              highlight: data._highlightCountryCode,
-              order: table.order,
-              size: bc.biggest,
-            ),
+        builder: (context, api, data, table, __) => Padding(
+          child: Stack(
+            children: [
+              LayoutBuilder(
+                builder: (_, bc) => _CustomPaint(
+                  countries: api.hasData ? api.countries : null,
+                  highlight: data._highlightCountryCode,
+                  order: table.order,
+                  size: bc.biggest,
+                ),
+              ),
+              if (data._highlightCountryCode != null)
+                Positioned.directional(
+                  child: IconButton(
+                    icon: Icon(Icons.close),
+                    onPressed: () => data.highlightCountryCode = null,
+                  ),
+                  end: 0,
+                  textDirection: Directionality.of(context),
+                ),
+            ],
           ),
           padding: const EdgeInsets.all(8),
         ),
@@ -46,12 +59,8 @@ class MapWidget extends StatelessWidget {
 class MapData extends ChangeNotifier {
   String _highlightCountryCode;
   set highlightCountryCode(String code) {
-    if (code == _highlightCountryCode) {
-      _highlightCountryCode = null;
-    } else {
-      _highlightCountryCode = code;
-    }
-
+    if (code == _highlightCountryCode) return;
+    _highlightCountryCode = code;
     notifyListeners();
   }
 
