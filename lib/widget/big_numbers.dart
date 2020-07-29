@@ -59,8 +59,9 @@ class _Card extends StatelessWidget {
                   child: number != null
                       ? LayoutBuilder(
                           builder: (_, bc) => Center(
-                            child: Text(
-                              NumberFormat().format(number),
+                            child: _JumpingNumberWidget(
+                              number: number,
+                              delta: number2,
                               style: TextStyle(
                                 fontSize:
                                     min(bc.maxWidth / 7, bc.maxHeight / 2),
@@ -83,4 +84,73 @@ class _Card extends StatelessWidget {
           ),
         ),
       );
+}
+
+class _JumpingNumberWidget extends StatefulWidget {
+  final int delta;
+  final int number;
+  final TextStyle style;
+
+  const _JumpingNumberWidget({
+    Key key,
+    @required this.delta,
+    @required this.number,
+    @required this.style,
+  }) : super(key: key);
+
+  @override
+  _JumpingNumberState createState() => _JumpingNumberState();
+}
+
+class _JumpingNumberState extends State<_JumpingNumberWidget>
+    with TickerProviderStateMixin {
+  AnimationController _controller;
+  Animation<double> _number;
+
+  @override
+  initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      duration: const Duration(seconds: 2),
+      vsync: this,
+    )..addListener(() => setState(() {}));
+
+    _resetAnimation();
+  }
+
+  @override
+  dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Text(
+        NumberFormat().format(_number?.value?.toInt() ?? widget.number),
+        style: widget.style,
+      );
+
+  @override
+  void didUpdateWidget(_JumpingNumberWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.number != oldWidget.number) _resetAnimation();
+  }
+
+  void _resetAnimation() {
+    if (widget.number == null || widget.delta == null) return;
+
+    final number = widget.number.toDouble();
+    _number = Tween<double>(
+      begin: number - widget.delta,
+      end: number,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.ease,
+    ));
+
+    _controller
+      ..reset()
+      ..forward();
+  }
 }
