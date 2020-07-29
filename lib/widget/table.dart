@@ -31,18 +31,14 @@ class _TableState extends State<TableWidget> {
 
   @override
   Widget build(BuildContext _) => Consumer2<Api, TableData>(
-        builder: (_, api, data, __) => api.isLoading
-            ? Center(
-                child: CircularProgressIndicator(
-                value: kIsWeb ? null : api.progress,
+        builder: (_, api, data, __) => api.hasData
+            ? SafeArea(
+                child: LayoutBuilder(
+                builder: (_, bc) =>
+                    _buildTable(api, data.order, showNew: bc.maxWidth > 600),
               ))
-            : api.hasData
-                ? SafeArea(
-                    child: LayoutBuilder(
-                    builder: (_, bc) => _buildTable(api, data.order,
-                        showNew: bc.maxWidth > 600),
-                  ))
-                : Text(api.error.toString()),
+            : Text(api.error?.toString() ??
+                'API data is unavailable. Please try again later'),
       );
 
   Widget _buildTable(Api api, SortOrder order, {bool showNew}) {

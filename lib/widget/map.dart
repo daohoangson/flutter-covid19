@@ -7,6 +7,25 @@ import 'package:covid19/widget/table.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+const kMapPreferredRatio = world_svg.kWidth / world_svg.kHeight;
+
+class MapProgressIndicator extends StatelessWidget {
+  final double value;
+
+  const MapProgressIndicator({Key key, @required this.value}) : super(key: key);
+
+  @override
+  Widget build(BuildContext _) => Padding(
+        child: LayoutBuilder(
+          builder: (_, bc) => _CustomPaint(
+            progress: value,
+            size: bc.biggest,
+          ),
+        ),
+        padding: const EdgeInsets.all(8),
+      );
+}
+
 class MapWidget extends StatelessWidget {
   @override
   Widget build(BuildContext _) => Consumer3<Api, MapData, TableData>(
@@ -44,6 +63,7 @@ class _CustomPaint extends StatefulWidget {
   final Iterable<ApiCountry> countries;
   final String highlight;
   final SortOrder order;
+  final double progress;
   final Size size;
 
   const _CustomPaint({
@@ -51,6 +71,7 @@ class _CustomPaint extends StatefulWidget {
     this.highlight,
     Key key,
     this.order,
+    this.progress = 1,
     @required this.size,
   }) : super(key: key);
 
@@ -91,6 +112,7 @@ class _CustomPaintState extends State<_CustomPaint>
             countries: widget.countries,
             focusPoint: focusPoint?.value ?? centerPoint,
             order: widget.order,
+            progress: widget.progress,
             scale: scale?.value ?? 1,
           ),
         ),
@@ -179,12 +201,14 @@ class _Painter extends CustomPainter {
   final Iterable<ApiCountry> countries;
   final Offset focusPoint;
   final SortOrder order;
+  final double progress;
   final double scale;
 
   _Painter({
     this.countries,
     this.focusPoint,
     this.order,
+    this.progress,
     this.scale,
   });
 
@@ -215,8 +239,15 @@ class _Painter extends CustomPainter {
         _paint(canvas, _paints[seriousness], country.code);
       }
     } else {
-      for (final code in world_svg.getAvailableCountryCodes()) {
+      final codes = world_svg.getAvailableCountryCodes();
+      var i = 0;
+      for (final code in codes) {
         _paint(canvas, _paints[0], code);
+        i++;
+
+        if (progress < 1 && i / codes.length > progress) {
+          break;
+        }
       }
     }
   }
@@ -226,6 +257,7 @@ class _Painter extends CustomPainter {
       ((countries == null) != (other.countries == null)) ||
       focusPoint != other.focusPoint ||
       order != other.order ||
+      progress != other.progress ||
       scale != other.scale;
 
   static final _paints = <Paint>[
