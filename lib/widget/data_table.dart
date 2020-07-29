@@ -1,5 +1,6 @@
 import 'package:covid19/api/api.dart';
 import 'package:covid19/widget/graph.dart';
+import 'package:covid19/widget/map.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -129,9 +130,13 @@ class _DataRow extends StatelessWidget {
   Widget build(BuildContext context) => Row(children: [
         _FlagWidget(country.code, key: ValueKey(country.code)),
         Expanded(
-          child: Padding(
-            child: Text('${index + 1}. ${country.name}'),
-            padding: const EdgeInsets.symmetric(vertical: 8),
+          child: InkWell(
+            child: Padding(
+              child: Text('${index + 1}. ${country.name}'),
+              padding: const EdgeInsets.symmetric(vertical: 8),
+            ),
+            onTap: () =>
+                MapData.of(context).highlightCountryCode = country.code,
           ),
         ),
         _NumberWidget(

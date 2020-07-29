@@ -7,11 +7,12 @@ import 'package:provider/provider.dart';
 
 class MapWidget extends StatelessWidget {
   @override
-  Widget build(BuildContext _) => Consumer<Api>(
-        builder: (_, api, __) => Padding(
+  Widget build(BuildContext _) => Consumer2<Api, MapData>(
+        builder: (_, api, data, __) => Padding(
           child: CustomPaint(
             painter: _Painter(
-              api.hasData ? api.countries : null,
+              countries: api.hasData ? api.countries : null,
+              highlight: data._highlightCountryCode,
             ),
           ),
           padding: const EdgeInsets.all(8),
@@ -19,12 +20,30 @@ class MapWidget extends StatelessWidget {
       );
 }
 
-class MapData extends ChangeNotifier {}
+class MapData extends ChangeNotifier {
+  String _highlightCountryCode;
+  set highlightCountryCode(String code) {
+    if (code == _highlightCountryCode) {
+      _highlightCountryCode = null;
+    } else {
+      _highlightCountryCode = code;
+    }
+
+    notifyListeners();
+  }
+
+  static MapData of(BuildContext context) =>
+      Provider.of<MapData>(context, listen: false);
+}
 
 class _Painter extends CustomPainter {
   final Iterable<ApiCountry> countries;
+  final String highlight;
 
-  _Painter(this.countries);
+  _Painter({
+    this.countries,
+    this.highlight,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -41,11 +60,14 @@ class _Painter extends CustomPainter {
 
     if (countries != null) {
       for (final country in countries) {
-        final v = (log(country.latest.casesTotal) / log(2))
+        final commands = world_svg.getCommandsByCountryCode(country.code);
+        final seriousness = (log(country.latest.casesTotal) / log(2))
             .clamp(1, _paints.length - 1)
             .toInt();
-        _paint(canvas, _paints[v],
-            world_svg.getCommandsByCountryCode(country.code));
+        final paint = (highlight == null || highlight == country.code)
+            ? _paints[seriousness]
+            : _paints[0];
+        _paint(canvas, paint, commands);
       }
     } else {
       for (final code in world_svg.getAvailableCountryCodes()) {
@@ -56,7 +78,8 @@ class _Painter extends CustomPainter {
 
   @override
   bool shouldRepaint(_Painter other) =>
-      (countries == null) != (other.countries == null);
+      ((countries == null) != (other.countries == null)) ||
+      highlight != other.highlight;
 
   static final _paints = <Paint>[
     Paint()
