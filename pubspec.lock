@@ -76,36 +76,11 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  flutter_plugin_android_lifecycle:
-    dependency: transitive
-    description:
-      name: flutter_plugin_android_lifecycle
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "1.0.8"
   flutter_test:
     dependency: "direct dev"
     description: flutter
     source: sdk
     version: "0.0.0"
-  google_maps_flutter:
-    dependency: "direct main"
-    description:
-      path: "packages/google_maps_flutter/google_maps_flutter"
-      ref: "google_maps_flutter/heatmap"
-      resolved-ref: "52a52f2e12098b49facf67c0d991a5d7fd85596d"
-      url: "https://github.com/daohoangson/plugins.git"
-    source: git
-    version: "0.5.28+3"
-  google_maps_flutter_platform_interface:
-    dependency: "direct overridden"
-    description:
-      path: "packages/google_maps_flutter/google_maps_flutter_platform_interface"
-      ref: "google_maps_flutter/heatmap"
-      resolved-ref: "52a52f2e12098b49facf67c0d991a5d7fd85596d"
-      url: "https://github.com/daohoangson/plugins.git"
-    source: git
-    version: "1.0.2"
   http:
     dependency: "direct main"
     description:
@@ -176,13 +151,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.4.0"
-  plugin_platform_interface:
-    dependency: transitive
-    description:
-      name: plugin_platform_interface
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "1.0.2"
   provider:
     dependency: "direct main"
     description:
@@ -223,13 +191,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.0.0"
-  stream_transform:
-    dependency: transitive
-    description:
-      name: stream_transform
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "1.2.0"
   string_scanner:
     dependency: transitive
     description:
@@ -274,4 +235,4 @@ packages:
     version: "3.6.1"
 sdks:
   dart: ">=2.7.0 <3.0.0"
-  flutter: ">=1.16.0 <2.0.0"
+  flutter: ">=1.16.0"

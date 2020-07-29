@@ -1,6 +1,8 @@
+import 'package:covid19/api/api.dart';
 import 'package:covid19/api/who.dart';
-import 'package:covid19/widget/data_table.dart';
 import 'package:covid19/widget/map.dart';
+import 'package:covid19/widget/table.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -20,6 +22,7 @@ class MyApp extends StatelessWidget {
           providers: [
             ChangeNotifierProvider.value(value: WhoApi.getInstance()),
             ChangeNotifierProvider(create: (_) => MapData()),
+            ChangeNotifierProvider(create: (_) => TableData()),
           ],
         ),
       );
@@ -27,25 +30,36 @@ class MyApp extends StatelessWidget {
 
 class _Body extends StatelessWidget {
   @override
-  Widget build(BuildContext _) => LayoutBuilder(
-        builder: (_, bc) => bc.maxWidth < bc.maxHeight
-            ? Column(
-                children: [
-                  AspectRatio(
-                    aspectRatio: 16 / 9,
-                    child: MapWidget(),
-                  ),
-                  Expanded(child: DataTableWidget()),
-                ],
-              )
-            : Row(
-                children: [
-                  AspectRatio(
-                    aspectRatio: 1,
-                    child: MapWidget(),
-                  ),
-                  Expanded(child: DataTableWidget()),
-                ],
-              ),
+  Widget build(BuildContext _) => Consumer<Api>(
+        builder: (_, api, child) => api.hasData
+            ? child
+            : kIsWeb
+                ? const Center(child: CircularProgressIndicator())
+                : Center(
+                    child: AspectRatio(
+                    aspectRatio: kMapPreferredRatio,
+                    child: MapProgressIndicator(value: api.progress),
+                  )),
+        child: LayoutBuilder(
+          builder: (_, bc) => bc.maxWidth < bc.maxHeight
+              ? Column(
+                  children: [
+                    AspectRatio(
+                      aspectRatio: kMapPreferredRatio,
+                      child: MapWidget(),
+                    ),
+                    Expanded(child: TableWidget()),
+                  ],
+                )
+              : Row(
+                  children: [
+                    AspectRatio(
+                      aspectRatio: 1,
+                      child: MapWidget(),
+                    ),
+                    Expanded(child: TableWidget()),
+                  ],
+                ),
+        ),
       );
 }

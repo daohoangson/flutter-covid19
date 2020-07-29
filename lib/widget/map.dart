@@ -1,88 +1,389 @@
 import 'dart:math';
 
-import 'package:covid19/api/dpl.dart';
+import 'package:covid19/api/api.dart';
+import 'package:covid19/api/sort.dart';
+import 'package:covid19/api/world_svg.dart' as world_svg;
+import 'package:covid19/widget/table.dart';
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart' as google;
 import 'package:provider/provider.dart';
+
+const kMapPreferredRatio = world_svg.kWidth / world_svg.kHeight;
+
+class MapProgressIndicator extends StatelessWidget {
+  final double value;
+
+  const MapProgressIndicator({Key key, @required this.value}) : super(key: key);
+
+  @override
+  Widget build(BuildContext _) => Padding(
+        child: LayoutBuilder(
+          builder: (_, bc) => _CustomPaint(
+            progress: value,
+            size: bc.biggest,
+          ),
+        ),
+        padding: const EdgeInsets.all(8),
+      );
+}
 
 class MapWidget extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Consumer<MapData>(
-        builder: (_, data, __) => google.GoogleMap(
-          buildingsEnabled: false,
-          compassEnabled: false,
-          heatmaps: data._heatmaps,
-          initialCameraPosition: google.CameraPosition(
-            target: _latLngFromCode('VN'),
+  Widget build(BuildContext _) => Consumer3<Api, MapData, TableData>(
+        builder: (context, api, data, table, __) => Padding(
+          child: Stack(
+            children: [
+              LayoutBuilder(
+                builder: (_, bc) => _CustomPaint(
+                  countries: api.hasData ? api.countries : null,
+                  highlight: data._highlightCountryCode,
+                  order: table.order,
+                  size: bc.biggest,
+                ),
+              ),
+              if (data._highlightCountryCode != null)
+                Positioned.directional(
+                  child: IconButton(
+                    icon: Icon(Icons.close),
+                    onPressed: () => data.highlightCountryCode = null,
+                  ),
+                  end: 0,
+                  textDirection: Directionality.of(context),
+                ),
+            ],
           ),
-          mapToolbarEnabled: false,
-          myLocationButtonEnabled: false,
-          myLocationEnabled: false,
-          onMapCreated: (v) => MapData.of(context)._setController(v),
-          rotateGesturesEnabled: false,
-          tiltGesturesEnabled: false,
+          padding: const EdgeInsets.all(8),
         ),
       );
 }
 
 class MapData extends ChangeNotifier {
-  google.GoogleMapController _controller;
-  void _setController(google.GoogleMapController v) {
-    _controller = v;
+  String _highlightCountryCode;
+  set highlightCountryCode(String code) {
+    if (code == _highlightCountryCode) return;
+    _highlightCountryCode = code;
     notifyListeners();
-  }
-
-  Set<google.Heatmap> _heatmaps;
-  set heatmap(Heatmap heatmap) {
-    _heatmaps = Set()
-      ..add(google.Heatmap(
-        heatmapId: google.HeatmapId('default'),
-        points: heatmap.points
-            .map((p) {
-              final latLng = _latLngFromCode(p.countryCode);
-              if (latLng == null) return null;
-
-              return google.WeightedLatLng(
-                point: latLng,
-                intensity: log(p.value).clamp(1, 20).ceil(),
-              );
-            })
-            .where((p) => p != null)
-            .toList(growable: false),
-        radius: 20,
-      ));
-    notifyListeners();
-  }
-
-  Future<void> animateCamera(String countryCode) async {
-    final latLng = _latLngFromCode(countryCode);
-    if (latLng == null) return;
-
-    final cameraUpdate = google.CameraUpdate.newLatLng(latLng);
-    return _controller?.animateCamera(cameraUpdate);
   }
 
   static MapData of(BuildContext context) =>
       Provider.of<MapData>(context, listen: false);
 }
 
-class Heatmap {
-  final Iterable<HeatmapPoint> points;
+class _CustomPaint extends StatefulWidget {
+  final Iterable<ApiCountry> countries;
+  final String highlight;
+  final SortOrder order;
+  final double progress;
+  final Size size;
 
-  Heatmap({@required this.points});
+  const _CustomPaint({
+    this.countries,
+    this.highlight,
+    Key key,
+    this.order,
+    this.progress = 1,
+    @required this.size,
+  }) : super(key: key);
+
+  @override
+  State<StatefulWidget> createState() => _CustomPaintState();
 }
 
-class HeatmapPoint {
-  final String countryCode;
-  final int value;
+class _CustomPaintState extends State<_CustomPaint>
+    with TickerProviderStateMixin {
+  static const centerPoint =
+      Offset(world_svg.kWidth / 2, world_svg.kHeight / 2);
 
-  HeatmapPoint({@required this.countryCode, @required this.value});
-}
+  AnimationController _controller;
 
-google.LatLng _latLngFromCode(String countryCode) {
-  if (!kDplCountriesCsv.containsKey(countryCode)) {
-    return null;
+  Animation<Offset> focusPoint;
+  Animation<double> scale;
+
+  @override
+  initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      vsync: this,
+    )..addListener(() => setState(() {}));
   }
-  final values = kDplCountriesCsv[countryCode];
-  return google.LatLng(values[0], values[1]);
+
+  @override
+  dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => SizedBox.fromSize(
+        child: CustomPaint(
+          painter: _Painter(
+            countries: widget.countries,
+            focusPoint: focusPoint?.value ?? centerPoint,
+            order: widget.order,
+            progress: widget.progress,
+            scale: scale?.value ?? 1,
+          ),
+        ),
+        size: widget.size,
+      );
+
+  @override
+  void didUpdateWidget(_CustomPaint oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (widget.highlight != oldWidget.highlight) {
+      final code = widget.highlight;
+      final rect = _getCountryRect(code);
+      final focusBegin = focusPoint?.value ?? centerPoint;
+      final focusEnd = rect != null ? rect.center : centerPoint;
+      focusPoint = Tween<Offset>(
+        begin: focusBegin,
+        end: focusEnd,
+      ).animate(_controller);
+
+      final scaleBegin = scale?.value ?? 1.0;
+      final scaleEnd =
+          rect != null ? _calculateScaleToFit(rect, widget.size) : 1.0;
+      scale = Tween<double>(
+        begin: scaleBegin,
+        end: scaleEnd,
+      ).animate(_controller);
+
+      _controller
+        ..reset()
+        ..forward();
+    }
+  }
+
+  static double _calculateScaleToFit(Rect rect, Size size) {
+    final ratio = rect.width / rect.height;
+    var width = size.width;
+    var height = width / ratio;
+    if (height > size.height) {
+      height = size.height;
+      width = height * ratio;
+    }
+
+    return world_svg.kWidth / width;
+  }
+
+  static Rect _getCountryRect(String countryCode) {
+    final commands = world_svg.getCommandsByCountryCode(countryCode);
+    if (commands.isEmpty) return null;
+
+    Offset prev;
+    double xMin, xMax, yMin, yMax;
+    Rect bestRect;
+
+    for (final command in commands) {
+      switch (command.type) {
+        case world_svg.CommandType.l:
+          final offset = prev + command.offset;
+          prev = offset;
+          xMin = min(xMin, offset.dx);
+          xMax = max(xMax, offset.dx);
+          yMin = min(yMin, offset.dy);
+          yMax = max(yMax, offset.dy);
+          break;
+        case world_svg.CommandType.m:
+          final offset = (prev ?? Offset(0, 0)) + command.offset;
+          prev = offset;
+          xMin = xMax = offset.dx;
+          yMin = yMax = offset.dy;
+          break;
+        case world_svg.CommandType.z:
+          final rect = Rect.fromLTRB(xMin, yMin, xMax, yMax);
+          if (bestRect == null ||
+              rect.width * rect.height > bestRect.width * bestRect.height) {
+            bestRect = rect;
+          }
+          break;
+      }
+    }
+
+    return bestRect;
+  }
+}
+
+class _Painter extends CustomPainter {
+  final Iterable<ApiCountry> countries;
+  final Offset focusPoint;
+  final SortOrder order;
+  final double progress;
+  final double scale;
+
+  _Painter({
+    this.countries,
+    this.focusPoint,
+    this.order,
+    this.progress,
+    this.scale,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final ratio = world_svg.kWidth / world_svg.kHeight;
+    var width = size.width;
+    var height = width / ratio;
+    if (height > size.height) {
+      height = size.height;
+      width = height * ratio;
+    }
+
+    canvas.translate((size.width - width) / 2, (size.height - height) / 2);
+    canvas.scale(width / world_svg.kWidth, height / world_svg.kHeight);
+
+    canvas.translate(
+      (world_svg.kWidth / 2 - focusPoint.dx * scale),
+      (world_svg.kHeight / 2 - focusPoint.dy * scale),
+    );
+    if (scale != 1) canvas.scale(scale);
+
+    if (countries != null) {
+      for (final country in countries) {
+        final seriousness = (log(order.measure(country.latest)) / log(2))
+            .clamp(1, _paints.length - 1)
+            .toInt();
+        _paint(canvas, _paints[seriousness], country.code);
+      }
+    } else {
+      final codes = world_svg.getAvailableCountryCodes();
+      var i = 0;
+      for (final code in codes) {
+        _paint(canvas, _paints[0], code);
+        i++;
+
+        if (progress < 1 && i / codes.length > progress) {
+          break;
+        }
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_Painter other) =>
+      ((countries == null) != (other.countries == null)) ||
+      focusPoint != other.focusPoint ||
+      order != other.order ||
+      progress != other.progress ||
+      scale != other.scale;
+
+  static final _paints = <Paint>[
+    Paint()
+      ..color = Colors.black
+      ..style = PaintingStyle.stroke,
+    Paint()
+      ..color = Colors.green
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.green
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.green
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.lime
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.lime
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.lime
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.yellow[300]
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.yellow[300]
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.yellow[500]
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.yellow[500]
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.yellow[700]
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.yellow[700]
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.orange[500]
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.orange[500]
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.orange[700]
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.orange[700]
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.red[500]
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.red[500]
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.red[700]
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.red[700]
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.red[900]
+      ..style = PaintingStyle.fill,
+    Paint()
+      ..color = Colors.red[900]
+      ..style = PaintingStyle.fill,
+  ];
+
+  static void _paint(Canvas canvas, Paint paint, String countryCode) {
+    final commands = world_svg.getCommandsByCountryCode(countryCode);
+
+    var pathCount = 0;
+    List<Offset> points;
+    double xMin, xMax, yMin, yMax;
+
+    for (final command in commands) {
+      switch (command.type) {
+        case world_svg.CommandType.l:
+          final offset = points.last + command.offset;
+          points.add(offset);
+          xMin = min(xMin, offset.dx);
+          xMax = max(xMax, offset.dx);
+          yMin = min(yMin, offset.dy);
+          yMax = max(yMax, offset.dy);
+          break;
+        case world_svg.CommandType.m:
+          final offset =
+              (points?.isNotEmpty == true ? points.last : Offset(0, 0)) +
+                  command.offset;
+          points = [offset];
+          xMin = xMax = offset.dx;
+          yMin = yMax = offset.dy;
+          break;
+        case world_svg.CommandType.z:
+          if (pathCount > 0) {
+            final area = (xMax - xMin) * (yMax - yMin);
+            if (area < 50) {
+              // skip drawing path if the area is too small (practially invisible)
+              // without the check, we were drawing up to 1.5k paths
+              // currently we are only drawing 300 of those
+              continue;
+            }
+          }
+
+          final path = Path();
+          path.addPolygon(points, true);
+          canvas.drawPath(path, paint);
+
+          pathCount++;
+          break;
+      }
+    }
+  }
 }
