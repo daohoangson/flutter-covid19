@@ -1,3 +1,5 @@
+import 'package:flutter/painting.dart';
+
 /*
 curl -s https://mapsvg.com/static/maps/geo-calibrated/world.svg \
   | faq '.svg.path[]' -o json -p=0 \
@@ -521,18 +523,58 @@ const _kCountries = {
 const kHeight = 665.96301;
 const kWidth = 1009.6727;
 
-final _commands = Map<String, Iterable<String>>();
+final _commands = Map<String, Iterable<Command>>();
+
+class Command {
+  final CommandType type;
+  final Offset offset;
+
+  Command.l(this.offset) : type = CommandType.l;
+
+  Command.m(this.offset) : type = CommandType.m;
+
+  Command.z()
+      : type = CommandType.z,
+        offset = null;
+
+  @override
+  String toString() => '$type($offset)';
+}
+
+enum CommandType { l, m, z }
 
 Iterable<String> getAvailableCountryCodes() => _kCountries.keys;
 
-Iterable<String> getCommandsByCountryCode(String code) {
+Iterable<Command> getCommandsByCountryCode(String code) {
   if (!_commands.containsKey(code)) {
+    final commands = <Command>[];
     if (_kCountries.containsKey(code)) {
-      _commands[code] = _kCountries[code].split(' ');
-    } else {
-      _commands[code] = [];
+      final parts = _kCountries[code].split(' ');
+      final i = parts.iterator;
+      while (i.moveNext()) {
+        final part = i.current;
+        switch (part) {
+          case 'm':
+            if (i.moveNext()) {
+              commands.add(Command.m(_parseOffset(i.current)));
+            }
+            break;
+          case 'z':
+            commands.add(Command.z());
+            break;
+          default:
+            commands.add(Command.l(_parseOffset(part)));
+        }
+      }
     }
+
+    _commands[code] = commands;
   }
 
   return _commands[code];
+}
+
+Offset _parseOffset(String str) {
+  final l = str.split(',');
+  return Offset(double.parse(l[0]), double.parse(l[1]));
 }

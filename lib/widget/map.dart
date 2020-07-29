@@ -145,33 +145,29 @@ class _CustomPaintState extends State<_CustomPaint>
     double xMin, xMax, yMin, yMax;
     Rect bestRect;
 
-    final i = commands.iterator;
-    while (i.moveNext()) {
-      final command = i.current;
-      switch (command) {
-        case 'm':
-          if (i.moveNext()) {
-            final offset =
-                (prev ?? Offset(0, 0)) + _Painter._parseOffset(i.current);
-            prev = offset;
-            xMin = xMax = offset.dx;
-            yMin = yMax = offset.dy;
-          }
+    for (final command in commands) {
+      switch (command.type) {
+        case world_svg.CommandType.l:
+          final offset = prev + command.offset;
+          prev = offset;
+          xMin = min(xMin, offset.dx);
+          xMax = max(xMax, offset.dx);
+          yMin = min(yMin, offset.dy);
+          yMax = max(yMax, offset.dy);
           break;
-        case 'z':
+        case world_svg.CommandType.m:
+          final offset = (prev ?? Offset(0, 0)) + command.offset;
+          prev = offset;
+          xMin = xMax = offset.dx;
+          yMin = yMax = offset.dy;
+          break;
+        case world_svg.CommandType.z:
           final rect = Rect.fromLTRB(xMin, yMin, xMax, yMax);
           if (bestRect == null ||
               rect.width * rect.height > bestRect.width * bestRect.height) {
             bestRect = rect;
           }
           break;
-        default:
-          final offset = prev + _Painter._parseOffset(command);
-          prev = offset;
-          xMin = min(xMin, offset.dx);
-          xMax = max(xMax, offset.dx);
-          yMin = min(yMin, offset.dy);
-          yMax = max(yMax, offset.dy);
       }
     }
 
@@ -213,15 +209,14 @@ class _Painter extends CustomPainter {
 
     if (countries != null) {
       for (final country in countries) {
-        final commands = world_svg.getCommandsByCountryCode(country.code);
         final seriousness = (log(order.measure(country.latest)) / log(2))
             .clamp(1, _paints.length - 1)
             .toInt();
-        _paint(canvas, _paints[seriousness], commands);
+        _paint(canvas, _paints[seriousness], country.code);
       }
     } else {
       for (final code in world_svg.getAvailableCountryCodes()) {
-        _paint(canvas, _paints[0], world_svg.getCommandsByCountryCode(code));
+        _paint(canvas, _paints[0], code);
       }
     }
   }
@@ -305,26 +300,32 @@ class _Painter extends CustomPainter {
       ..style = PaintingStyle.fill,
   ];
 
-  static void _paint(Canvas canvas, Paint paint, Iterable<String> commands) {
+  static void _paint(Canvas canvas, Paint paint, String countryCode) {
+    final commands = world_svg.getCommandsByCountryCode(countryCode);
+
     var pathCount = 0;
     List<Offset> points;
     double xMin, xMax, yMin, yMax;
 
-    final i = commands.iterator;
-    while (i.moveNext()) {
-      final command = i.current;
-      switch (command) {
-        case 'm':
-          if (i.moveNext()) {
-            final offset =
-                (points?.isNotEmpty == true ? points.last : Offset(0, 0)) +
-                    _parseOffset(i.current);
-            points = [offset];
-            xMin = xMax = offset.dx;
-            yMin = yMax = offset.dy;
-          }
+    for (final command in commands) {
+      switch (command.type) {
+        case world_svg.CommandType.l:
+          final offset = points.last + command.offset;
+          points.add(offset);
+          xMin = min(xMin, offset.dx);
+          xMax = max(xMax, offset.dx);
+          yMin = min(yMin, offset.dy);
+          yMax = max(yMax, offset.dy);
           break;
-        case 'z':
+        case world_svg.CommandType.m:
+          final offset =
+              (points?.isNotEmpty == true ? points.last : Offset(0, 0)) +
+                  command.offset;
+          points = [offset];
+          xMin = xMax = offset.dx;
+          yMin = yMax = offset.dy;
+          break;
+        case world_svg.CommandType.z:
           if (pathCount > 0) {
             final area = (xMax - xMin) * (yMax - yMin);
             if (area < 50) {
@@ -341,23 +342,7 @@ class _Painter extends CustomPainter {
 
           pathCount++;
           break;
-        default:
-          final offset = points.last + _parseOffset(command);
-          points.add(offset);
-          xMin = min(xMin, offset.dx);
-          xMax = max(xMax, offset.dx);
-          yMin = min(yMin, offset.dy);
-          yMax = max(yMax, offset.dy);
       }
     }
-  }
-
-  static Offset _parseOffset(String str) {
-    final parts = str.split(',');
-    assert(parts.length == 2);
-
-    final dx = double.parse(parts[0]);
-    final dy = double.parse(parts[1]);
-    return Offset(dx, dy);
   }
 }
