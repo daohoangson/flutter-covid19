@@ -14,9 +14,7 @@ class MyApp extends StatelessWidget {
         title: 'Covid-19',
         home: MultiProvider(
           child: Scaffold(
-            appBar: AppBar(
-              title: Text('Covid-19 numbers worldwide'),
-            ),
+            appBar: !kIsWeb ? AppBar(title: Text('Covid-19 numbers worldwide')) : null,
             body: _Body(),
           ),
           providers: [
