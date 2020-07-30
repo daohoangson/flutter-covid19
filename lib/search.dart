@@ -29,7 +29,14 @@ class CountryCodeSearchDelegate extends SearchDelegate<String> {
             MapEntry("${c.code.toLowerCase()} ${c.name.toLowerCase()}", c)));
 
   @override
-  List<Widget> buildActions(BuildContext context) => [];
+  List<Widget> buildActions(BuildContext context) => [
+        if (query.isNotEmpty)
+          IconButton(
+            icon: const Icon(Icons.clear),
+            onPressed: () => query = '',
+            tooltip: 'Clear',
+          ),
+      ];
 
   @override
   Widget buildLeading(BuildContext context) => IconButton(
