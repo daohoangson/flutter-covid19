@@ -238,7 +238,7 @@ const _seriousnessDeathsTotal = <int>[
 ];
 
 final kColors = <Color>[
-  Colors.grey,
+  Colors.black,
   Colors.green[700],
   Colors.green,
   Colors.lime[600],
