@@ -22,14 +22,19 @@ class _TableState extends State<TableWidget> {
         builder: (_, api, app, __) => api.hasData
             ? SafeArea(
                 child: LayoutBuilder(
-                builder: (_, bc) =>
-                    _buildTable(api, app, showNew: bc.maxWidth > 600),
+                builder: (_, bc) => _buildTable(
+                  api,
+                  app,
+                  layout: bc.maxWidth > 600
+                      ? _Layout.fourNumbers
+                      : _Layout.twoNumbers,
+                ),
               ))
             : Text(api.error?.toString() ??
                 'API data is unavailable. Please try again later'),
       );
 
-  Widget _buildTable(Api api, AppState app, {bool showNew}) {
+  Widget _buildTable(Api api, AppState app, {_Layout layout}) {
     final order = app.order;
     if (_sortedOrder != order) {
       _sortedList = order.sort(api.countries);
@@ -39,54 +44,51 @@ class _TableState extends State<TableWidget> {
     return Column(children: [
       Row(children: [
         const Expanded(child: SizedBox.shrink()),
-        _buildHeader(
-          (order == deathsTotalAsc
-                  ? '↑ '
-                  : order == deathsTotalDesc ? '↓ ' : '') +
-              'Deaths',
-          onTap: () => setState(() => AppState.of(context).order =
-              order == deathsTotalDesc ? deathsTotalAsc : deathsTotalDesc),
-        ),
-        if (showNew) _NumberBox(),
-        _buildHeader(
-          (order == casesTotalAsc
-                  ? '↑ '
-                  : order == casesTotalDesc ? '↓ ' : '') +
-              'Cases',
-          onTap: () => setState(() => AppState.of(context).order =
-              order == casesTotalDesc ? casesTotalAsc : casesTotalDesc),
-        ),
-        if (showNew) _NumberBox(),
+        _buildHeader(deathsTotal, order),
+        if (layout == _Layout.fourNumbers) _buildHeader(deathsNew, order),
+        _buildHeader(casesTotal, order),
+        if (layout == _Layout.fourNumbers) _buildHeader(casesNew, order),
       ]),
       Expanded(
         child: _ListView(
           countries: _sortedList,
           highlight: app.highlight,
           highlighter: app.highlighter,
-          showNew: showNew,
+          layout: layout,
         ),
       ),
     ]);
   }
 
-  Widget _buildHeader(String data, {VoidCallback onTap}) => InkWell(
-        child: _NumberBox(child: _NumberText(data)),
-        onTap: onTap,
+  Widget _buildHeader(SortOrderPair pair, SortOrder order) => InkWell(
+        child: _NumberBox(
+          child: _NumberText(
+            (order == pair.asc ? '↑ ' : order == pair.desc ? '↓ ' : '') +
+                pair.header,
+          ),
+        ),
+        onTap: () =>
+            setState(() => AppState.of(context).order = pair.flip(order)),
       );
+}
+
+enum _Layout {
+  fourNumbers,
+  twoNumbers,
 }
 
 class _ListView extends StatefulWidget {
   final List<ApiCountry> countries;
   final ApiCountry highlight;
   final Highlighter highlighter;
-  final bool showNew;
+  final _Layout layout;
 
   const _ListView({
     @required this.countries,
     this.highlight,
     this.highlighter,
     Key key,
-    @required this.showNew,
+    @required this.layout,
   }) : super(key: key);
 
   @override
@@ -135,32 +137,28 @@ class _ListState extends State<_ListView> {
           children: [
             Expanded(child: _buildName(number, country)),
             _buildNumber(
-              color: Colors.red,
               country: country,
               graphMode: GraphMode.line,
-              measureFn: (record) => record.deathsTotal,
+              sop: deathsTotal,
             ),
-            if (widget.showNew)
+            if (widget.layout == _Layout.fourNumbers)
               _buildNumber(
-                color: Colors.orange,
                 country: country,
                 data: '+${_formatNumber(country.latest.deathsNew)}',
                 graphMode: GraphMode.bar,
-                measureFn: (record) => record.deathsNew,
+                sop: deathsNew,
               ),
             _buildNumber(
-              color: Colors.green,
               country: country,
               graphMode: GraphMode.line,
-              measureFn: (record) => record.casesTotal,
+              sop: casesTotal,
             ),
-            if (widget.showNew)
+            if (widget.layout == _Layout.fourNumbers)
               _buildNumber(
-                color: Colors.lime,
                 country: country,
                 data: '+${_formatNumber(country.latest.casesNew)}',
                 graphMode: GraphMode.bar,
-                measureFn: (record) => record.casesNew,
+                sop: casesNew,
               ),
           ],
         ),
@@ -179,34 +177,38 @@ class _ListState extends State<_ListView> {
       );
 
   Widget _buildNumber({
-    Color color,
     ApiCountry country,
     String data,
     GraphMode graphMode,
-    int Function(ApiRecord) measureFn,
-  }) =>
-      _NumberBox(
-        child: Padding(
-          child: Stack(
-            children: [
-              _NumberText(
-                data ?? _formatNumber(measureFn(country.latest)),
+    SortOrderPair sop,
+  }) {
+    final record = country.latest;
+    final sort = sop.asc;
+    final color = kColors[sort.calculateSeriousness(record)];
+
+    return _NumberBox(
+      child: Padding(
+        child: Stack(
+          children: [
+            _NumberText(
+              data ?? _formatNumber(sort.measure(record)),
+              color: color,
+            ),
+            Positioned.fill(
+              child: GraphWidget(
                 color: color,
+                id: "${country.code}-${sop.hashCode}",
+                measureFn: sort.measure,
+                mode: graphMode,
+                records: country.records,
               ),
-              Positioned.fill(
-                child: GraphWidget(
-                  color: color,
-                  id: "${country.code}-${measureFn(country.latest)}",
-                  measureFn: measureFn,
-                  mode: graphMode,
-                  records: country.records,
-                ),
-              ),
-            ],
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 4),
+            ),
+          ],
         ),
-      );
+        padding: const EdgeInsets.symmetric(vertical: 4),
+      ),
+    );
+  }
 }
 
 class _NumberBox extends StatelessWidget {

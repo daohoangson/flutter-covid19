@@ -1,15 +1,30 @@
 import 'package:covid19/api/api.dart';
+import 'package:flutter/material.dart';
 
 class SortOrder {
   final int Function(ApiRecord, ApiRecord) _compare1;
   final int Function(ApiRecord, ApiRecord) _compare2;
   final int Function(ApiRecord) measure;
+  final List<int> seriousnessValues;
 
-  const SortOrder(
+  const SortOrder._(
     this._compare1,
     this._compare2,
     this.measure,
+    this.seriousnessValues,
   );
+
+  int calculateSeriousness(ApiRecord record) {
+    final value = measure(record);
+    final max = seriousnessValues.length;
+    for (var i = max - 1; i >= 0; i--) {
+      if (value > seriousnessValues[i]) {
+        return i + 2;
+      }
+    }
+
+    return 1;
+  }
 
   List<ApiCountry> sort(Iterable<ApiCountry> list) => [...list]..sort(_compare);
 
@@ -26,33 +41,91 @@ class SortOrder {
   }
 }
 
-const casesTotalAsc = SortOrder(
-  _casesTotalAsc,
-  _deathsTotalAsc,
-  _casesTotal,
+class SortOrderPair {
+  final SortOrder asc;
+  final SortOrder desc;
+  final String header;
+
+  const SortOrderPair._(this.header, this.asc, this.desc);
+
+  SortOrder flip(SortOrder order) => order == desc ? asc : desc;
+}
+
+const casesNew = SortOrderPair._(
+  'New',
+  SortOrder._(
+    _casesNewAsc,
+    _deathsNewAsc,
+    _casesNew,
+    _seriousnessCasesNew,
+  ),
+  SortOrder._(
+    _casesNewDesc,
+    _deathsNewDesc,
+    _casesNew,
+    _seriousnessCasesNew,
+  ),
 );
 
-const casesTotalDesc = SortOrder(
-  _casesTotalDesc,
-  _deathsTotalDesc,
-  _casesTotal,
+const casesTotal = SortOrderPair._(
+  'Cases',
+  SortOrder._(
+    _casesTotalAsc,
+    _deathsTotalAsc,
+    _casesTotal,
+    _seriousnessCasesTotal,
+  ),
+  SortOrder._(
+    _casesTotalDesc,
+    _deathsTotalDesc,
+    _casesTotal,
+    _seriousnessCasesTotal,
+  ),
 );
 
-const deathsTotalAsc = SortOrder(
-  _deathsTotalAsc,
-  _casesTotalAsc,
-  _deathsTotal,
+const deathsNew = SortOrderPair._(
+  'Today',
+  SortOrder._(
+    _deathsNewAsc,
+    _casesNewAsc,
+    _deathsNew,
+    _seriousnessDeathsNew,
+  ),
+  SortOrder._(
+    _deathsNewDesc,
+    _casesNewDesc,
+    _deathsNew,
+    _seriousnessDeathsNew,
+  ),
 );
 
-const deathsTotalDesc = SortOrder(
-  _deathsTotalDesc,
-  _casesTotalDesc,
-  _deathsTotal,
+const deathsTotal = SortOrderPair._(
+  'Deaths',
+  SortOrder._(
+    _deathsTotalAsc,
+    _casesTotalAsc,
+    _deathsTotal,
+    _seriousnessDeathsTotal,
+  ),
+  SortOrder._(
+    _deathsTotalDesc,
+    _casesTotalDesc,
+    _deathsTotal,
+    _seriousnessDeathsTotal,
+  ),
 );
+
+int _casesNew(ApiRecord r) => r.casesNew;
 
 int _casesTotal(ApiRecord r) => r.casesTotal;
 
+int _deathsNew(ApiRecord r) => r.deathsNew;
+
 int _deathsTotal(ApiRecord r) => r.deathsTotal;
+
+int _casesNewAsc(ApiRecord a, ApiRecord b) => a.casesNew.compareTo(b.casesNew);
+
+int _casesNewDesc(ApiRecord a, ApiRecord b) => b.casesNew.compareTo(a.casesNew);
 
 int _casesTotalAsc(ApiRecord a, ApiRecord b) =>
     a.casesTotal.compareTo(b.casesTotal);
@@ -60,8 +133,76 @@ int _casesTotalAsc(ApiRecord a, ApiRecord b) =>
 int _casesTotalDesc(ApiRecord a, ApiRecord b) =>
     b.casesTotal.compareTo(a.casesTotal);
 
+int _deathsNewAsc(ApiRecord a, ApiRecord b) =>
+    a.deathsNew.compareTo(b.deathsNew);
+
+int _deathsNewDesc(ApiRecord a, ApiRecord b) =>
+    b.deathsNew.compareTo(a.deathsNew);
+
 int _deathsTotalAsc(ApiRecord a, ApiRecord b) =>
     a.deathsTotal.compareTo(b.deathsTotal);
 
 int _deathsTotalDesc(ApiRecord a, ApiRecord b) =>
     b.deathsTotal.compareTo(a.deathsTotal);
+
+const _seriousnessCasesNew = <int>[
+  0,
+  10,
+  50,
+  200,
+  1000,
+  5000,
+  20000,
+  50000,
+  100000,
+];
+
+const _seriousnessCasesTotal = <int>[
+  10,
+  100,
+  1000,
+  10000,
+  50000,
+  200000,
+  1000000,
+  2000000,
+  5000000,
+];
+
+const _seriousnessDeathsNew = <int>[
+  0,
+  2,
+  5,
+  10,
+  20,
+  100,
+  500,
+  1000,
+  2000,
+];
+
+const _seriousnessDeathsTotal = <int>[
+  0,
+  10,
+  100,
+  500,
+  2000,
+  10000,
+  50000,
+  100000,
+  200000,
+];
+
+final kColors = <Color>[
+  Colors.black,
+  Colors.green,
+  Colors.lime,
+  Colors.yellow[300],
+  Colors.yellow[500],
+  Colors.yellow[700],
+  Colors.orange[500],
+  Colors.orange[700],
+  Colors.red[500],
+  Colors.red[700],
+  Colors.red[900],
+];

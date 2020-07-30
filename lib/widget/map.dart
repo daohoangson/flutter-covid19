@@ -237,9 +237,9 @@ class _Painter extends CustomPainter {
 
     if (countries != null) {
       for (final country in countries) {
-        final seriousness = (log(order.measure(country.latest)) / log(2))
-            .clamp(1, _paints.length - 1)
-            .toInt();
+        final seriousness = order
+            .calculateSeriousness(country.latest)
+            .clamp(0, _paints.length - 1);
         _paint(canvas, _paints[seriousness], country.code);
       }
 
@@ -271,73 +271,37 @@ class _Painter extends CustomPainter {
 
   static final _paints = <Paint>[
     Paint()
-      ..color = Colors.black
+      ..color = kColors[0]
       ..style = PaintingStyle.stroke,
     Paint()
-      ..color = Colors.green
+      ..color = kColors[1]
       ..style = PaintingStyle.fill,
     Paint()
-      ..color = Colors.green
+      ..color = kColors[2]
       ..style = PaintingStyle.fill,
     Paint()
-      ..color = Colors.green
+      ..color = kColors[3]
       ..style = PaintingStyle.fill,
     Paint()
-      ..color = Colors.lime
+      ..color = kColors[4]
       ..style = PaintingStyle.fill,
     Paint()
-      ..color = Colors.lime
+      ..color = kColors[5]
       ..style = PaintingStyle.fill,
     Paint()
-      ..color = Colors.lime
+      ..color = kColors[6]
       ..style = PaintingStyle.fill,
     Paint()
-      ..color = Colors.yellow[300]
+      ..color = kColors[7]
       ..style = PaintingStyle.fill,
     Paint()
-      ..color = Colors.yellow[300]
+      ..color = kColors[8]
       ..style = PaintingStyle.fill,
     Paint()
-      ..color = Colors.yellow[500]
+      ..color = kColors[9]
       ..style = PaintingStyle.fill,
     Paint()
-      ..color = Colors.yellow[500]
-      ..style = PaintingStyle.fill,
-    Paint()
-      ..color = Colors.yellow[700]
-      ..style = PaintingStyle.fill,
-    Paint()
-      ..color = Colors.yellow[700]
-      ..style = PaintingStyle.fill,
-    Paint()
-      ..color = Colors.orange[500]
-      ..style = PaintingStyle.fill,
-    Paint()
-      ..color = Colors.orange[500]
-      ..style = PaintingStyle.fill,
-    Paint()
-      ..color = Colors.orange[700]
-      ..style = PaintingStyle.fill,
-    Paint()
-      ..color = Colors.orange[700]
-      ..style = PaintingStyle.fill,
-    Paint()
-      ..color = Colors.red[500]
-      ..style = PaintingStyle.fill,
-    Paint()
-      ..color = Colors.red[500]
-      ..style = PaintingStyle.fill,
-    Paint()
-      ..color = Colors.red[700]
-      ..style = PaintingStyle.fill,
-    Paint()
-      ..color = Colors.red[700]
-      ..style = PaintingStyle.fill,
-    Paint()
-      ..color = Colors.red[900]
-      ..style = PaintingStyle.fill,
-    Paint()
-      ..color = Colors.red[900]
+      ..color = kColors[10]
       ..style = PaintingStyle.fill,
   ];
 

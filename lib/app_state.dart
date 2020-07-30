@@ -15,11 +15,11 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  SortOrder __order = deathsTotalDesc;
-  SortOrder get order => __order;
+  SortOrder _order = deathsTotal.desc;
+  SortOrder get order => _order;
   set order(SortOrder v) {
-    if (v == __order) return;
-    __order = v;
+    if (v == _order) return;
+    _order = v;
     notifyListeners();
   }
 
