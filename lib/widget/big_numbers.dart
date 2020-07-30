@@ -111,7 +111,7 @@ class _Card extends StatelessWidget {
                   Text(
                     '$title2${NumberFormat().format(number2)}',
                     maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    overflow: TextOverflow.fade,
                     style: Theme.of(context).textTheme.caption,
                   )
               ],

@@ -2,17 +2,27 @@ import 'package:covid19/api/api.dart';
 import 'package:flutter/material.dart';
 
 class SortOrder {
-  final int Function(ApiRecord, ApiRecord) _compare1;
-  final int Function(ApiRecord, ApiRecord) _compare2;
+  final _TypeAscDesc _typeAscDesc;
+  final _TypeCasesDeaths _typeCasesDeaths;
+  final _TypeNewTotal _typeNewTotal;
   final int Function(ApiRecord) measure;
+  final int Function(ApiRecord) _measure2;
   final List<int> seriousnessValues;
 
   const SortOrder._(
-    this._compare1,
-    this._compare2,
+    this._typeAscDesc,
+    this._typeCasesDeaths,
+    this._typeNewTotal,
     this.measure,
+    this._measure2,
     this.seriousnessValues,
   );
+
+  bool get isAsc => _typeAscDesc == _TypeAscDesc.asc;
+
+  bool get isCases => _typeCasesDeaths == _TypeCasesDeaths.cases;
+
+  bool get isNew => _typeNewTotal == _TypeNewTotal.new_;
 
   int calculateSeriousness(ApiRecord record) {
     final value = measure(record);
@@ -28,92 +38,144 @@ class SortOrder {
 
   List<ApiCountry> sort(Iterable<ApiCountry> list) => [...list]..sort(_compare);
 
+  SortOrder flipNewTotal() {
+    for (final pair in _pairs) {
+      final other = isAsc ? pair.asc : pair.desc;
+      if (other._typeCasesDeaths == _typeCasesDeaths &&
+          other._typeNewTotal != _typeNewTotal) {
+        return other;
+      }
+    }
+
+    return this;
+  }
+
   int _compare(ApiCountry a, ApiCountry b) {
     final aa = a.latest;
     final bb = b.latest;
 
-    var cmp = _compare1(aa, bb);
-    if (cmp == 0) {
-      cmp = _compare2(aa, bb);
-    }
+    final a1 = measure(aa);
+    final b1 = measure(bb);
+    final cmp1 = isAsc ? a1.compareTo(b1) : b1.compareTo(a1);
+    if (cmp1 != 0) return cmp1;
 
-    return cmp;
+    final a2 = _measure2(aa);
+    final b2 = _measure2(bb);
+    return isAsc ? a2.compareTo(b2) : b2.compareTo(a2);
   }
 }
 
 class SortOrderPair {
   final SortOrder asc;
   final SortOrder desc;
-  final String header;
 
-  const SortOrderPair._(this.header, this.asc, this.desc);
+  const SortOrderPair._(this.asc, this.desc);
 
-  SortOrder flip(SortOrder order) => order == desc ? asc : desc;
+  String get header =>
+      asc.isNew ? (asc.isCases ? 'New' : 'Today') : headerCasesDeaths;
+
+  String get headerCasesDeaths => asc.isCases ? 'Cases' : 'Deaths';
+
+  SortOrder flipAscDesc(SortOrder order) => order == desc ? asc : desc;
+}
+
+enum _TypeAscDesc {
+  asc,
+  desc,
+}
+
+enum _TypeCasesDeaths {
+  cases,
+  deaths,
+}
+
+enum _TypeNewTotal {
+  new_,
+  total,
 }
 
 const casesNew = SortOrderPair._(
-  'New',
   SortOrder._(
-    _casesNewAsc,
-    _deathsNewAsc,
+    _TypeAscDesc.asc,
+    _TypeCasesDeaths.cases,
+    _TypeNewTotal.new_,
     _casesNew,
+    _deathsNew,
     _seriousnessCasesNew,
   ),
   SortOrder._(
-    _casesNewDesc,
-    _deathsNewDesc,
+    _TypeAscDesc.desc,
+    _TypeCasesDeaths.cases,
+    _TypeNewTotal.new_,
     _casesNew,
+    _deathsNew,
     _seriousnessCasesNew,
   ),
 );
 
 const casesTotal = SortOrderPair._(
-  'Cases',
   SortOrder._(
-    _casesTotalAsc,
-    _deathsTotalAsc,
+    _TypeAscDesc.asc,
+    _TypeCasesDeaths.cases,
+    _TypeNewTotal.total,
     _casesTotal,
+    _deathsTotal,
     _seriousnessCasesTotal,
   ),
   SortOrder._(
-    _casesTotalDesc,
-    _deathsTotalDesc,
+    _TypeAscDesc.desc,
+    _TypeCasesDeaths.cases,
+    _TypeNewTotal.total,
     _casesTotal,
+    _deathsTotal,
     _seriousnessCasesTotal,
   ),
 );
 
 const deathsNew = SortOrderPair._(
-  'Today',
   SortOrder._(
-    _deathsNewAsc,
-    _casesNewAsc,
+    _TypeAscDesc.asc,
+    _TypeCasesDeaths.deaths,
+    _TypeNewTotal.new_,
     _deathsNew,
+    _casesNew,
     _seriousnessDeathsNew,
   ),
   SortOrder._(
-    _deathsNewDesc,
-    _casesNewDesc,
+    _TypeAscDesc.desc,
+    _TypeCasesDeaths.deaths,
+    _TypeNewTotal.new_,
     _deathsNew,
+    _casesNew,
     _seriousnessDeathsNew,
   ),
 );
 
 const deathsTotal = SortOrderPair._(
-  'Deaths',
   SortOrder._(
-    _deathsTotalAsc,
-    _casesTotalAsc,
+    _TypeAscDesc.asc,
+    _TypeCasesDeaths.deaths,
+    _TypeNewTotal.total,
     _deathsTotal,
+    _casesTotal,
     _seriousnessDeathsTotal,
   ),
   SortOrder._(
-    _deathsTotalDesc,
-    _casesTotalDesc,
+    _TypeAscDesc.desc,
+    _TypeCasesDeaths.deaths,
+    _TypeNewTotal.total,
     _deathsTotal,
+    _casesTotal,
     _seriousnessDeathsTotal,
   ),
 );
+
+const _pairs = [
+  casesTotal,
+  casesNew,
+  deathsTotal,
+  deathsNew,
+];
 
 int _casesNew(ApiRecord r) => r.casesNew;
 
@@ -122,28 +184,6 @@ int _casesTotal(ApiRecord r) => r.casesTotal;
 int _deathsNew(ApiRecord r) => r.deathsNew;
 
 int _deathsTotal(ApiRecord r) => r.deathsTotal;
-
-int _casesNewAsc(ApiRecord a, ApiRecord b) => a.casesNew.compareTo(b.casesNew);
-
-int _casesNewDesc(ApiRecord a, ApiRecord b) => b.casesNew.compareTo(a.casesNew);
-
-int _casesTotalAsc(ApiRecord a, ApiRecord b) =>
-    a.casesTotal.compareTo(b.casesTotal);
-
-int _casesTotalDesc(ApiRecord a, ApiRecord b) =>
-    b.casesTotal.compareTo(a.casesTotal);
-
-int _deathsNewAsc(ApiRecord a, ApiRecord b) =>
-    a.deathsNew.compareTo(b.deathsNew);
-
-int _deathsNewDesc(ApiRecord a, ApiRecord b) =>
-    b.deathsNew.compareTo(a.deathsNew);
-
-int _deathsTotalAsc(ApiRecord a, ApiRecord b) =>
-    a.deathsTotal.compareTo(b.deathsTotal);
-
-int _deathsTotalDesc(ApiRecord a, ApiRecord b) =>
-    b.deathsTotal.compareTo(a.deathsTotal);
 
 const _seriousnessCasesNew = <int>[
   -1,
