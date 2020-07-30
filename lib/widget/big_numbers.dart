@@ -12,9 +12,9 @@ class BigNumbersWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext _) => Consumer2<Api, AppState>(
-        builder: (_, api, app, __) => app.highlightCountryCode != null
+        builder: (_, api, app, __) => app.highlight != null
             ? _buildCountry(api.countries
-                ?.where((c) => c.code == app.highlightCountryCode)
+                ?.where((country) => country == app.highlight)
                 ?.first)
             : _buildWorld(api.worldLatest),
       );

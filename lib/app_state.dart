@@ -1,13 +1,17 @@
+import 'package:covid19/api/api.dart';
 import 'package:covid19/api/sort.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class AppState extends ChangeNotifier {
-  String _highlightCountryCode;
-  String get highlightCountryCode => _highlightCountryCode;
-  set highlightCountryCode(String v) {
-    if (v == _highlightCountryCode) return;
-    _highlightCountryCode = v;
+  ApiCountry _highlight;
+  ApiCountry get highlight => _highlight;
+  Highlighter _highlighter;
+  Highlighter get highlighter => _highlighter;
+  void setHighlight(Highlighter highlighter, ApiCountry country) {
+    if (country == _highlight) return;
+    _highlight = country;
+    _highlighter = highlighter;
     notifyListeners();
   }
 
@@ -21,4 +25,9 @@ class AppState extends ChangeNotifier {
 
   static AppState of(BuildContext context) =>
       Provider.of<AppState>(context, listen: false);
+}
+
+enum Highlighter {
+  search,
+  table,
 }

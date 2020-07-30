@@ -35,16 +35,16 @@ class MapWidget extends StatelessWidget {
               LayoutBuilder(
                 builder: (_, bc) => _CustomPaint(
                   countries: api.hasData ? api.countries : null,
-                  highlight: app.highlightCountryCode,
+                  highlight: app.highlight,
                   order: app.order,
                   size: bc.biggest,
                 ),
               ),
-              if (app.highlightCountryCode != null)
+              if (app.highlight != null)
                 Positioned.directional(
                   child: IconButton(
                     icon: Icon(Icons.close),
-                    onPressed: () => app.highlightCountryCode = null,
+                    onPressed: () => app.setHighlight(Highlighter.search, null),
                   ),
                   start: 0,
                   textDirection: Directionality.of(context),
@@ -58,7 +58,7 @@ class MapWidget extends StatelessWidget {
 
 class _CustomPaint extends StatefulWidget {
   final Iterable<ApiCountry> countries;
-  final String highlight;
+  final ApiCountry highlight;
   final SortOrder order;
   final double progress;
   final Size size;
@@ -122,7 +122,7 @@ class _CustomPaintState extends State<_CustomPaint>
     super.didUpdateWidget(oldWidget);
 
     if (widget.highlight != oldWidget.highlight) {
-      final code = widget.highlight;
+      final code = widget.highlight?.code;
       final rect = _getCountryRect(code);
       final focusBegin = focusPoint?.value ?? centerPoint;
       final focusEnd = rect != null ? rect.center : centerPoint;
@@ -198,7 +198,7 @@ class _CustomPaintState extends State<_CustomPaint>
 class _Painter extends CustomPainter {
   final Iterable<ApiCountry> countries;
   final Offset focusPoint;
-  final String highlight;
+  final ApiCountry highlight;
   final SortOrder order;
   final double progress;
   final double scale;
@@ -240,7 +240,7 @@ class _Painter extends CustomPainter {
       }
 
       if (highlight != null) {
-        _paint(canvas, _paints[0], highlight);
+        _paint(canvas, _paints[0], highlight.code);
       }
     } else {
       final codes = world_svg.getAvailableCountryCodes();

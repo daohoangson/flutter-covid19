@@ -4,17 +4,19 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class CountryCodeSearchIcon extends StatelessWidget {
+class CountrySearchIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Consumer<Api>(
         builder: (context, api, child) => api.hasData
             ? IconButton(
                 icon: Icon(Icons.search),
-                onPressed: () => showSearch<String>(
+                onPressed: () => showSearch<ApiCountry>(
                   context: context,
-                  delegate: _CountryCodeSearchDelegate(api.countries),
-                ).then((v) {
-                  if (v != null) AppState.of(context).highlightCountryCode = v;
+                  delegate: _CountrySearchDelegate(api.countries),
+                ).then((country) {
+                  if (country != null)
+                    AppState.of(context)
+                        .setHighlight(Highlighter.search, country);
                 }),
                 tooltip: 'Search',
               )
@@ -22,11 +24,11 @@ class CountryCodeSearchIcon extends StatelessWidget {
       );
 }
 
-class _CountryCodeSearchDelegate extends SearchDelegate<String> {
+class _CountrySearchDelegate extends SearchDelegate<ApiCountry> {
   final Map<String, ApiCountry> searchIndex;
   final prefs = _SearchPreferences();
 
-  _CountryCodeSearchDelegate(Iterable<ApiCountry> countries)
+  _CountrySearchDelegate(Iterable<ApiCountry> countries)
       : searchIndex = Map.fromEntries(countries.map((c) =>
             MapEntry("${c.code.toLowerCase()} ${c.name.toLowerCase()}", c)));
 
@@ -97,7 +99,7 @@ class _CountryCodeSearchDelegate extends SearchDelegate<String> {
 
   Future<void> onTap(BuildContext context, ApiCountry country) async {
     await prefs.addRecent(country.name);
-    close(context, country.code);
+    close(context, country);
   }
 }
 

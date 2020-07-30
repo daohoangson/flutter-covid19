@@ -19,7 +19,7 @@ class MyApp extends StatelessWidget {
           child: Scaffold(
             appBar: !kIsWeb
                 ? AppBar(
-                    actions: [CountryCodeSearchIcon()],
+                    actions: [CountrySearchIcon()],
                     title: Text('Covid-19 numbers worldwide'),
                   )
                 : null,
