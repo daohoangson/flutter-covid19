@@ -3,7 +3,7 @@ import 'dart:math';
 import 'package:covid19/api/api.dart';
 import 'package:covid19/api/sort.dart';
 import 'package:covid19/api/world_svg.dart' as world_svg;
-import 'package:covid19/widget/table.dart';
+import 'package:covid19/app_state.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -28,23 +28,23 @@ class MapProgressIndicator extends StatelessWidget {
 
 class MapWidget extends StatelessWidget {
   @override
-  Widget build(BuildContext _) => Consumer3<Api, MapData, TableData>(
-        builder: (context, api, data, table, __) => Padding(
+  Widget build(BuildContext _) => Consumer2<Api, AppState>(
+        builder: (context, api, app, _) => Padding(
           child: Stack(
             children: [
               LayoutBuilder(
                 builder: (_, bc) => _CustomPaint(
                   countries: api.hasData ? api.countries : null,
-                  highlight: data._highlightCountryCode,
-                  order: table.order,
+                  highlight: app.highlightCountryCode,
+                  order: app.order,
                   size: bc.biggest,
                 ),
               ),
-              if (data._highlightCountryCode != null)
+              if (app.highlightCountryCode != null)
                 Positioned.directional(
                   child: IconButton(
                     icon: Icon(Icons.close),
-                    onPressed: () => data.highlightCountryCode = null,
+                    onPressed: () => app.highlightCountryCode = null,
                   ),
                   start: 0,
                   textDirection: Directionality.of(context),
@@ -54,18 +54,6 @@ class MapWidget extends StatelessWidget {
           padding: const EdgeInsets.all(8),
         ),
       );
-}
-
-class MapData extends ChangeNotifier {
-  String _highlightCountryCode;
-  set highlightCountryCode(String code) {
-    if (code == _highlightCountryCode) return;
-    _highlightCountryCode = code;
-    notifyListeners();
-  }
-
-  static MapData of(BuildContext context) =>
-      Provider.of<MapData>(context, listen: false);
 }
 
 class _CustomPaint extends StatefulWidget {

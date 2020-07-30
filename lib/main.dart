@@ -1,5 +1,6 @@
 import 'package:covid19/api/api.dart';
 import 'package:covid19/api/who.dart';
+import 'package:covid19/app_state.dart';
 import 'package:covid19/widget/big_numbers.dart';
 import 'package:covid19/widget/map.dart';
 import 'package:covid19/widget/table.dart';
@@ -22,8 +23,7 @@ class MyApp extends StatelessWidget {
           ),
           providers: [
             ChangeNotifierProvider.value(value: WhoApi.getInstance()),
-            ChangeNotifierProvider(create: (_) => MapData()),
-            ChangeNotifierProvider(create: (_) => TableData()),
+            ChangeNotifierProvider(create: (_) => AppState()),
           ],
         ),
       );
