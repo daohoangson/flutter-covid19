@@ -1,7 +1,7 @@
 import 'package:covid19/api/api.dart';
 import 'package:covid19/api/sort.dart';
+import 'package:covid19/app_state.dart';
 import 'package:covid19/widget/graph.dart';
-import 'package:covid19/widget/map.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -12,25 +12,12 @@ class TableWidget extends StatefulWidget {
   _TableState createState() => _TableState();
 }
 
-class TableData extends ChangeNotifier {
-  SortOrder __order = deathsTotalDesc;
-  SortOrder get order => __order;
-  set _order(SortOrder v) {
-    if (v == __order) return;
-    __order = v;
-    notifyListeners();
-  }
-
-  static TableData of(BuildContext context) =>
-      Provider.of<TableData>(context, listen: false);
-}
-
 class _TableState extends State<TableWidget> {
   SortOrder _sortedOrder;
   List<ApiCountry> _sortedList;
 
   @override
-  Widget build(BuildContext _) => Consumer2<Api, TableData>(
+  Widget build(BuildContext _) => Consumer2<Api, AppState>(
         builder: (_, api, data, __) => api.hasData
             ? SafeArea(
                 child: LayoutBuilder(
@@ -49,14 +36,13 @@ class _TableState extends State<TableWidget> {
 
     return Column(children: [
       Row(children: [
-        const SizedBox(width: _FlagWidget.WIDTH),
         const Expanded(child: SizedBox.shrink()),
         _Header(
           (order == deathsTotalAsc
                   ? '↑ '
                   : order == deathsTotalDesc ? '↓ ' : '') +
               'Deaths',
-          onTap: () => setState(() => TableData.of(context)._order =
+          onTap: () => setState(() => AppState.of(context).order =
               order == deathsTotalDesc ? deathsTotalAsc : deathsTotalDesc),
         ),
         if (showNew) _NumberBox(),
@@ -65,7 +51,7 @@ class _TableState extends State<TableWidget> {
                   ? '↑ '
                   : order == casesTotalDesc ? '↓ ' : '') +
               'Cases',
-          onTap: () => setState(() => TableData.of(context)._order =
+          onTap: () => setState(() => AppState.of(context).order =
               order == casesTotalDesc ? casesTotalAsc : casesTotalDesc),
         ),
         if (showNew) _NumberBox(),
@@ -98,15 +84,14 @@ class _DataRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Row(children: [
-        _FlagWidget(country.code, key: ValueKey(country.code)),
         Expanded(
           child: InkWell(
             child: Padding(
               child: Text('${index + 1}. ${country.name}'),
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              padding: const EdgeInsets.all(8),
             ),
             onTap: () =>
-                MapData.of(context).highlightCountryCode = country.code,
+                AppState.of(context).highlightCountryCode = country.code,
           ),
         ),
         _NumberWidget(
@@ -150,49 +135,6 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) => InkWell(
         child: _NumberBox(child: _NumberText(data)),
         onTap: onTap,
-      );
-}
-
-class _FlagWidget extends StatefulWidget {
-  static const HEIGHT = 24.0;
-  static const WIDTH = 32.0;
-
-  final String iso;
-
-  const _FlagWidget(this.iso, {Key key}) : super(key: key);
-
-  @override
-  _FlagState createState() => _FlagState();
-}
-
-class _FlagState extends State<_FlagWidget> {
-  bool imageOk;
-
-  ImageProvider get image =>
-      AssetImage('gosquared/flags/flags-iso/flat/32/${widget.iso}.png');
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-
-    imageOk = null;
-    precacheImage(
-      image,
-      context,
-      onError: (_, __) => mounted ? setState(() => imageOk = false) : null,
-    ).then((_) =>
-        mounted && imageOk == null ? setState(() => imageOk = true) : null);
-  }
-
-  @override
-  Widget build(BuildContext context) => SizedBox(
-        child: imageOk == true
-            ? Image(image: image)
-            : imageOk == false
-                ? Icon(Icons.warning, size: _FlagWidget.HEIGHT)
-                : null,
-        height: _FlagWidget.HEIGHT,
-        width: _FlagWidget.WIDTH,
       );
 }
 

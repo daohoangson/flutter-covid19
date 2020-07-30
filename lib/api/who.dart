@@ -74,7 +74,9 @@ void _isolate(SendPort sendPort) async {
 
 Future<_WhoData> _fetch({SendPort sendPort}) async {
   final whoUrl = WhoApi.CSV_URL;
-  final url = kIsWeb ? 'https://cors-anywhere-by-daohoangson.herokuapp.com/$whoUrl' : whoUrl;
+  final url = kIsWeb
+      ? 'https://cors-anywhere-by-daohoangson.herokuapp.com/$whoUrl'
+      : whoUrl;
   final response = await Dio().getUri<String>(
     Uri.parse(url),
     onReceiveProgress: (count, total) =>
@@ -129,18 +131,23 @@ Future<_WhoData> _fetch({SendPort sendPort}) async {
   final list = List<ApiCountry>();
   final map = Map<String, int>();
   while (i < data.length) {
-    final countryCode = data[i][fieldIndexCountryCode];
+    final dataRow = data[i++];
+    final countryCode = dataRow[fieldIndexCountryCode];
+
+    // ignore `Other` data
+    if (countryCode == ' ') continue;
+
     if (!map.containsKey(countryCode)) {
       list.add(ApiCountry(
         countryCode,
-        name: data[i][fieldIndexCountry],
+        name: dataRow[fieldIndexCountry],
       ));
       map[countryCode] = list.length - 1;
 
       sendPort?.send(_WhoProgress.parsing(list));
     }
 
-    final dateReported = DateTime.tryParse(data[i][fieldIndexDateReported]);
+    final dateReported = DateTime.tryParse(dataRow[fieldIndexDateReported]);
     if (dateReported == null) {
       continue;
     }
@@ -149,14 +156,12 @@ Future<_WhoData> _fetch({SendPort sendPort}) async {
     }
 
     list[map[countryCode]].records.add(ApiRecord(
-          casesNew: int.tryParse(data[i][fieldIndexNewCases]) ?? 0,
-          casesTotal: int.tryParse(data[i][fieldIndexCumulativeCases]) ?? 0,
+          casesNew: int.tryParse(dataRow[fieldIndexNewCases]) ?? 0,
+          casesTotal: int.tryParse(dataRow[fieldIndexCumulativeCases]) ?? 0,
           date: dateReported,
-          deathsNew: int.tryParse(data[i][fieldIndexNewDeaths]) ?? 0,
-          deathsTotal: int.tryParse(data[i][fieldIndexCumulativeDeaths]) ?? 0,
+          deathsNew: int.tryParse(dataRow[fieldIndexNewDeaths]) ?? 0,
+          deathsTotal: int.tryParse(dataRow[fieldIndexCumulativeDeaths]) ?? 0,
         ));
-
-    i++;
   }
 
   final worldLatest = ApiRecord.from(list
