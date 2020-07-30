@@ -2,6 +2,7 @@ import 'package:covid19/api/api.dart';
 import 'package:covid19/api/sort.dart';
 import 'package:covid19/app_state.dart';
 import 'package:covid19/widget/graph.dart';
+import 'package:covid19/widget/toggler.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -62,15 +63,16 @@ class _TableState extends State<TableWidget> {
     ]);
   }
 
-  Widget _buildTotalNewToggler(SortOrder order) => InkWell(
-        child: Text(
-          order.isNew ? '(total / NEW)' : '(TOTAL / new)',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.caption,
-          textAlign: TextAlign.right,
+  Widget _buildTotalNewToggler(SortOrder order) => Align(
+        alignment: Alignment.centerRight,
+        child: InkWell(
+          child: TogglerWidget(
+            optionTrue: 'New',
+            optionFalse: 'Total',
+            value: order.isNew,
+          ),
+          onTap: () => AppState.of(context).order = order.flipNewTotal(),
         ),
-        onTap: () => AppState.of(context).order = order.flipNewTotal(),
       );
 
   Widget _buildHeader(SortOrderPair pair, SortOrder order, _Layout layout) =>
