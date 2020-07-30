@@ -4,24 +4,41 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class CountrySearchIcon extends StatelessWidget {
+class CountrySearchButton extends StatelessWidget {
+  final bool isFab;
+
+  CountrySearchButton.icon() : isFab = false;
+
+  CountrySearchButton.fab() : isFab = true;
+
+  Widget get icon => Icon(Icons.search);
+
+  String get tooltip => 'Search';
+
   @override
   Widget build(BuildContext context) => Consumer<Api>(
         builder: (context, api, child) => api.hasData
-            ? IconButton(
-                icon: Icon(Icons.search),
-                onPressed: () => showSearch<ApiCountry>(
-                  context: context,
-                  delegate: _CountrySearchDelegate(api.countries),
-                ).then((country) {
-                  if (country != null)
-                    AppState.of(context)
-                        .setHighlight(Highlighter.search, country);
-                }),
-                tooltip: 'Search',
-              )
+            ? isFab
+                ? FloatingActionButton(
+                    child: icon,
+                    onPressed: () => _onPressed(context, api),
+                    tooltip: tooltip,
+                  )
+                : IconButton(
+                    icon: icon,
+                    onPressed: () => _onPressed(context, api),
+                    tooltip: tooltip,
+                  )
             : const SizedBox.shrink(),
       );
+
+  void _onPressed(BuildContext context, Api api) => showSearch<ApiCountry>(
+        context: context,
+        delegate: _CountrySearchDelegate(api.countries),
+      ).then((country) {
+        if (country != null)
+          AppState.of(context).setHighlight(Highlighter.search, country);
+      });
 }
 
 class _CountrySearchDelegate extends SearchDelegate<ApiCountry> {

@@ -19,11 +19,12 @@ class MyApp extends StatelessWidget {
           child: Scaffold(
             appBar: !kIsWeb
                 ? AppBar(
-                    actions: [CountrySearchIcon()],
+                    actions: [CountrySearchButton.icon()],
                     title: Text('Covid-19 numbers worldwide'),
                   )
                 : null,
             body: _Body(),
+            floatingActionButton: kIsWeb ? CountrySearchButton.fab() : null,
           ),
           providers: [
             ChangeNotifierProvider.value(value: WhoApi.getInstance()),
