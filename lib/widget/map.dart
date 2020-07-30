@@ -5,6 +5,7 @@ import 'package:covid19/api/sort.dart';
 import 'package:covid19/api/world_svg.dart' as world_svg;
 import 'package:covid19/app_state.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart' as intl;
 import 'package:provider/provider.dart';
 
 const kMapPreferredRatio = world_svg.kWidth / world_svg.kHeight;
@@ -226,6 +227,8 @@ class _Painter extends CustomPainter {
       width = height * ratio;
     }
 
+    canvas.save();
+
     canvas.translate((size.width - width) / 2, (size.height - height) / 2);
     canvas.scale(width / world_svg.kWidth, height / world_svg.kHeight);
 
@@ -240,22 +243,30 @@ class _Painter extends CustomPainter {
         final seriousness = order
             .calculateSeriousness(country.latest)
             .clamp(0, _paints.length - 1);
-        _paint(canvas, _paints[seriousness], country.code);
+        _paintCountry(canvas, _paints[seriousness], country.code);
       }
 
       if (highlight != null) {
-        _paint(canvas, _paints[0], highlight.code);
+        _paintCountry(canvas, _paints[0], highlight.code);
       }
     } else {
       final codes = world_svg.getAvailableCountryCodes();
       var i = 0;
       for (final code in codes) {
-        _paint(canvas, _paints[0], code);
+        _paintCountry(canvas, _paints[0], code);
         i++;
 
         if (progress < 1 && i / codes.length > progress) {
           break;
         }
+      }
+    }
+
+    canvas.restore();
+
+    if (countries != null && highlight == null) {
+      for (var i = 1; i < _paints.length; i++) {
+        _paintLegend(canvas, size, i, order.seriousnessValues[i - 1]);
       }
     }
   }
@@ -268,6 +279,8 @@ class _Painter extends CustomPainter {
       order != other.order ||
       progress != other.progress ||
       scale != other.scale;
+
+  static final _legendValueFormatter = intl.NumberFormat.compact();
 
   static final _paints = <Paint>[
     Paint()
@@ -305,8 +318,8 @@ class _Painter extends CustomPainter {
       ..style = PaintingStyle.fill,
   ];
 
-  static void _paint(Canvas canvas, Paint paint, String countryCode) {
-    final commands = world_svg.getCommandsByCountryCode(countryCode);
+  static void _paintCountry(Canvas canvas, Paint paint, String code) {
+    final commands = world_svg.getCommandsByCountryCode(code);
 
     var pathCount = 0;
     List<Offset> points;
@@ -348,6 +361,44 @@ class _Painter extends CustomPainter {
           pathCount++;
           break;
       }
+    }
+  }
+
+  static void _paintLegend(
+    Canvas canvas,
+    Size size,
+    int level,
+    int value,
+  ) {
+    final left = 0.0;
+    final legendHeight = min(16.0, size.height / 10 / 2);
+    final legendWidth = legendHeight / 2;
+    final padding = legendWidth / 4;
+    final top = size.height - (legendHeight + padding) * level;
+    final rect = Rect.fromLTWH(left, top, legendWidth, legendHeight);
+    final paint = _paints[level];
+    canvas.drawRect(rect, paint);
+
+    if (value > -1) {
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: _legendValueFormatter.format(value),
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: legendHeight * .75,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+
+      textPainter.layout();
+      textPainter.paint(
+        canvas,
+        Offset(
+          left + legendWidth + padding,
+          top + (legendHeight - textPainter.height) / 2,
+        ),
+      );
     }
   }
 }

@@ -19,11 +19,11 @@ class SortOrder {
     final max = seriousnessValues.length;
     for (var i = max - 1; i >= 0; i--) {
       if (value > seriousnessValues[i]) {
-        return i + 2;
+        return i + 1;
       }
     }
 
-    return 1;
+    return 0;
   }
 
   List<ApiCountry> sort(Iterable<ApiCountry> list) => [...list]..sort(_compare);
@@ -146,6 +146,7 @@ int _deathsTotalDesc(ApiRecord a, ApiRecord b) =>
     b.deathsTotal.compareTo(a.deathsTotal);
 
 const _seriousnessCasesNew = <int>[
+  -1,
   0,
   10,
   50,
@@ -158,6 +159,7 @@ const _seriousnessCasesNew = <int>[
 ];
 
 const _seriousnessCasesTotal = <int>[
+  -1,
   10,
   100,
   1000,
@@ -170,6 +172,7 @@ const _seriousnessCasesTotal = <int>[
 ];
 
 const _seriousnessDeathsNew = <int>[
+  -1,
   0,
   2,
   5,
@@ -182,6 +185,7 @@ const _seriousnessDeathsNew = <int>[
 ];
 
 const _seriousnessDeathsTotal = <int>[
+  -1,
   0,
   10,
   100,
@@ -197,11 +201,11 @@ final kColors = <Color>[
   Colors.black,
   Colors.green,
   Colors.lime,
-  Colors.yellow[300],
   Colors.yellow[500],
   Colors.yellow[700],
   Colors.orange[500],
   Colors.orange[700],
+  Colors.orange[900],
   Colors.red[500],
   Colors.red[700],
   Colors.red[900],
