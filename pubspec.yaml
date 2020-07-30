@@ -14,6 +14,7 @@ dependencies:
   http:
   intl:
   provider:
+  scrollable_positioned_list:
   shared_preferences:
 
 dev_dependencies:

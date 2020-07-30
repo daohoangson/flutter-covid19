@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 class TableWidget extends StatefulWidget {
   @override
@@ -93,35 +94,39 @@ class _ListView extends StatefulWidget {
 }
 
 class _ListState extends State<_ListView> {
-  final _controller = ScrollController();
+  final _controller = ItemScrollController();
 
   @override
-  Widget build(BuildContext context) => ListView.builder(
-        controller: _controller,
+  Widget build(BuildContext context) => ScrollablePositionedList.builder(
         itemBuilder: (_, index) => _buildCountry(
           country: widget.countries[index],
           number: index + 1,
         ),
         itemCount: widget.countries.length,
+        itemScrollController: _controller,
       );
 
   @override
   void didUpdateWidget(_ListView oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    if (widget.highlight != oldWidget.highlight &&
-        widget.highlighter != Highlighter.table) {
-      // someone else (not us) changed the highlight country
+    final needsScrolling = false ||
+        // 1. Someone else (not us) changed the highlight country
+        (widget.highlight != oldWidget.highlight &&
+            widget.highlighter != Highlighter.table) ||
+        // 2. Sort order has been changed
+        (widget.countries != oldWidget.countries);
+
+    if (needsScrolling) {
       // let's scroll to make sure the highlighed is visible
-      if (widget.highlight == null) {
-        _controller.animateTo(
-          0,
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.ease,
-        );
-      } else {
-        // TODO: scroll to index
-      }
+      final index = widget.highlight != null
+          ? widget.countries.indexOf(widget.highlight)
+          : 0;
+      _controller.scrollTo(
+        index: index.clamp(0, widget.countries.length - 1),
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.ease,
+      );
     }
   }
 
