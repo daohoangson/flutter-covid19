@@ -129,6 +129,14 @@ class _ListState extends State<_ListView> {
   final _controller = ItemScrollController();
 
   @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _makeSureHighlightIsVisible(false));
+  }
+
+  @override
   Widget build(BuildContext context) => ScrollablePositionedList.builder(
         itemBuilder: (_, index) => _buildCountry(
           country: widget.countries[index],
@@ -142,23 +150,13 @@ class _ListState extends State<_ListView> {
   void didUpdateWidget(_ListView oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    final needsScrolling = false ||
+    if (
         // 1. Someone else (not us) changed the highlight country
         (widget.highlight != oldWidget.highlight &&
-            widget.highlighter != Highlighter.table) ||
-        // 2. Sort order has been changed
-        (widget.countries != oldWidget.countries);
-
-    if (needsScrolling) {
-      // let's scroll to make sure the highlighed is visible
-      final index = widget.highlight != null
-          ? widget.countries.indexOf(widget.highlight)
-          : 0;
-      _controller.scrollTo(
-        index: index.clamp(0, widget.countries.length - 1),
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.ease,
-      );
+                widget.highlighter != Highlighter.table) ||
+            // 2. Sort order has been changed
+            (widget.countries != oldWidget.countries)) {
+      _makeSureHighlightIsVisible(true);
     }
   }
 
@@ -240,6 +238,23 @@ class _ListState extends State<_ListView> {
         padding: const EdgeInsets.symmetric(vertical: 4),
       ),
     );
+  }
+
+  void _makeSureHighlightIsVisible(bool animate) {
+    final index = (widget.highlight != null
+            ? widget.countries.indexOf(widget.highlight)
+            : 0)
+        .clamp(0, widget.countries.length - 1);
+
+    if (animate) {
+      _controller.scrollTo(
+        index: index,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.ease,
+      );
+    } else {
+      _controller.jumpTo(index: index);
+    }
   }
 }
 
