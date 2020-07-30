@@ -22,11 +22,11 @@ class CountryCodeSearchIcon extends StatelessWidget {
 }
 
 class CountryCodeSearchDelegate extends SearchDelegate<String> {
-  final Map<String, String> index;
+  final Map<String, ApiCountry> searchIndex;
 
   CountryCodeSearchDelegate(Iterable<ApiCountry> countries)
-      : index = Map.fromEntries(
-            countries.map((c) => MapEntry(c.code, c.name.toLowerCase())));
+      : searchIndex = Map.fromEntries(countries.map((c) =>
+            MapEntry("${c.code.toLowerCase()} ${c.name.toLowerCase()}", c)));
 
   @override
   List<Widget> buildActions(BuildContext context) => [];
@@ -42,18 +42,21 @@ class CountryCodeSearchDelegate extends SearchDelegate<String> {
       );
 
   @override
-  Widget buildResults(BuildContext context) {
+  Widget buildResults(BuildContext _) {
     final q = query.toLowerCase();
-    return SingleChildScrollView(
-      child: Column(
-        children: index.entries
-            .where((e) => e.value.contains(q))
-            .map((e) => ListTile(
-                  title: Text(e.value),
-                  onTap: () => close(context, e.key),
-                ))
-            .toList(growable: false),
-      ),
+    final matchedKeys = searchIndex.keys
+        .where((key) => key.contains(q))
+        .toList(growable: false);
+
+    return ListView.builder(
+      itemBuilder: (context, index) {
+        final country = searchIndex[matchedKeys[index]];
+        return ListTile(
+          title: Text(country.name),
+          onTap: () => close(context, country.code),
+        );
+      },
+      itemCount: matchedKeys.length,
     );
   }
 
