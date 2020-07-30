@@ -91,7 +91,7 @@ class _CustomPaintState extends State<_CustomPaint>
     super.initState();
 
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(seconds: 1),
       vsync: this,
     )..addListener(() => setState(() {}));
 
@@ -158,7 +158,7 @@ class _CustomPaintState extends State<_CustomPaint>
       width = height * ratio;
     }
 
-    return world_svg.kWidth / width;
+    return min(10, width / rect.width * .5);
   }
 
   static Rect _getCountryRect(String countryCode) {
