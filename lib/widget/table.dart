@@ -65,25 +65,31 @@ class _TableState extends State<TableWidget> {
 
   Widget _buildTotalNewToggler(SortOrder order) => Align(
         alignment: Alignment.centerRight,
-        child: InkWell(
-          child: TogglerWidget(
-            optionTrue: 'New',
-            optionFalse: 'Total',
-            value: order.isNew,
+        child: Tooltip(
+          child: InkWell(
+            child: TogglerWidget(
+              optionTrue: 'New',
+              optionFalse: 'Total',
+              value: order.isNew,
+            ),
+            onTap: () => AppState.of(context).order = order.flipNewTotal(),
           ),
-          onTap: () => AppState.of(context).order = order.flipNewTotal(),
+          message: 'Toggle between Total and New numbers',
         ),
       );
 
   Widget _buildHeader(SortOrderPair pair, SortOrder order, _Layout layout) =>
-      InkWell(
-        child: _NumberBox(
-          child: _NumberText(
-            (order == pair.asc ? '↑ ' : order == pair.desc ? '↓ ' : '') +
-                (layout.showBoth ? pair.header : pair.headerCasesDeaths),
+      Tooltip(
+        child: InkWell(
+          child: _NumberBox(
+            child: _NumberText(
+              (order == pair.asc ? '↑ ' : order == pair.desc ? '↓ ' : '') +
+                  (layout.showBoth ? pair.header : pair.headerCasesDeaths),
+            ),
           ),
+          onTap: () => AppState.of(context).order = pair.flipAscDesc(order),
         ),
-        onTap: () => AppState.of(context).order = pair.flipAscDesc(order),
+        message: 'Sort by ${pair.headerCasesDeaths}',
       );
 }
 

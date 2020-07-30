@@ -46,6 +46,7 @@ class MapWidget extends StatelessWidget {
                   child: IconButton(
                     icon: Icon(Icons.close),
                     onPressed: () => app.setHighlight(Highlighter.search, null),
+                    tooltip: 'Close',
                   ),
                   start: 0,
                   textDirection: Directionality.of(context),
