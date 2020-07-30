@@ -28,6 +28,7 @@ class AppState extends ChangeNotifier {
 }
 
 enum Highlighter {
+  map,
   search,
   table,
 }

@@ -44,7 +44,7 @@ class MapWidget extends StatelessWidget {
                 Positioned.directional(
                   child: IconButton(
                     icon: Icon(Icons.close),
-                    onPressed: () => app.setHighlight(Highlighter.search, null),
+                    onPressed: () => app.setHighlight(Highlighter.map, null),
                   ),
                   start: 0,
                   textDirection: Directionality.of(context),
