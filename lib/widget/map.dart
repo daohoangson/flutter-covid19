@@ -108,6 +108,7 @@ class _CustomPaintState extends State<_CustomPaint>
           painter: _Painter(
             countries: widget.countries,
             focusPoint: focusPoint?.value ?? centerPoint,
+            highlight: widget.highlight,
             order: widget.order,
             progress: widget.progress,
             scale: scale?.value ?? 1,
@@ -197,6 +198,7 @@ class _CustomPaintState extends State<_CustomPaint>
 class _Painter extends CustomPainter {
   final Iterable<ApiCountry> countries;
   final Offset focusPoint;
+  final String highlight;
   final SortOrder order;
   final double progress;
   final double scale;
@@ -204,6 +206,7 @@ class _Painter extends CustomPainter {
   _Painter({
     this.countries,
     this.focusPoint,
+    this.highlight,
     this.order,
     this.progress,
     this.scale,
@@ -235,6 +238,10 @@ class _Painter extends CustomPainter {
             .toInt();
         _paint(canvas, _paints[seriousness], country.code);
       }
+
+      if (highlight != null) {
+        _paint(canvas, _paints[0], highlight);
+      }
     } else {
       final codes = world_svg.getAvailableCountryCodes();
       var i = 0;
@@ -253,6 +260,7 @@ class _Painter extends CustomPainter {
   bool shouldRepaint(_Painter other) =>
       ((countries == null) != (other.countries == null)) ||
       focusPoint != other.focusPoint ||
+      highlight != other.highlight ||
       order != other.order ||
       progress != other.progress ||
       scale != other.scale;
