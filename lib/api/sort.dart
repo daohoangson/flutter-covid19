@@ -18,6 +18,15 @@ class SortOrder {
     this.seriousnessValues,
   );
 
+  factory SortOrder.fromString(String str) {
+    for (final pair in _pairs) {
+      if (pair.asc.toString() == str) return pair.asc;
+      if (pair.desc.toString() == str) return pair.desc;
+    }
+
+    return null;
+  }
+
   bool get isAsc => _typeAscDesc == _TypeAscDesc.asc;
 
   bool get isCases => _typeCasesDeaths == _TypeCasesDeaths.cases;
@@ -36,8 +45,6 @@ class SortOrder {
     return 0;
   }
 
-  List<ApiCountry> sort(Iterable<ApiCountry> list) => [...list]..sort(_compare);
-
   SortOrder flipNewTotal() {
     for (final pair in _pairs) {
       final other = isAsc ? pair.asc : pair.desc;
@@ -49,6 +56,14 @@ class SortOrder {
 
     return this;
   }
+
+  List<ApiCountry> sort(Iterable<ApiCountry> list) => [...list]..sort(_compare);
+
+  @override
+  String toString() =>
+      (isCases ? 'cases' : 'deaths') +
+      (isNew ? 'New' : 'Total') +
+      (isAsc ? 'Asc' : 'Desc');
 
   int _compare(ApiCountry a, ApiCountry b) {
     final aa = a.latest;

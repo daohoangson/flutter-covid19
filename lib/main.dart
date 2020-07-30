@@ -27,7 +27,7 @@ class MyApp extends StatelessWidget {
             floatingActionButton: kIsWeb ? CountrySearchButton.fab() : null,
           ),
           providers: [
-            ChangeNotifierProvider.value(value: WhoApi.getInstance()),
+            ChangeNotifierProvider<Api>(create: (_) => WhoApi()),
             ChangeNotifierProvider(create: (_) => AppState()),
           ],
         ),

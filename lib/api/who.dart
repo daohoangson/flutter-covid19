@@ -8,7 +8,7 @@ import 'package:flutter/foundation.dart';
 class WhoApi extends Api {
   static const CSV_URL = 'https://covid19.who.int/WHO-COVID-19-global-data.csv';
 
-  WhoApi._() {
+  WhoApi() {
     if (kIsWeb) {
       /// [Isolate.spawn] is not supported in web
       compute(_compute, null).then(
@@ -32,12 +32,6 @@ class WhoApi extends Api {
         }
       }, onError: (reason) => error = reason);
     }
-  }
-
-  static Api _instance;
-  static Api getInstance() {
-    _instance ??= WhoApi._();
-    return _instance;
   }
 }
 
