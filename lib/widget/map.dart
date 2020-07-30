@@ -94,6 +94,8 @@ class _CustomPaintState extends State<_CustomPaint>
       duration: const Duration(milliseconds: 500),
       vsync: this,
     )..addListener(() => setState(() {}));
+
+    _resetAnimation();
   }
 
   @override
@@ -121,28 +123,30 @@ class _CustomPaintState extends State<_CustomPaint>
   void didUpdateWidget(_CustomPaint oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    if (widget.highlight != oldWidget.highlight) {
-      final code = widget.highlight?.code;
-      final rect = _getCountryRect(code);
-      final focusBegin = focusPoint?.value ?? centerPoint;
-      final focusEnd = rect != null ? rect.center : centerPoint;
-      focusPoint = Tween<Offset>(
-        begin: focusBegin,
-        end: focusEnd,
-      ).animate(_controller);
+    if (widget.highlight != oldWidget.highlight) _resetAnimation();
+  }
 
-      final scaleBegin = scale?.value ?? 1.0;
-      final scaleEnd =
-          rect != null ? _calculateScaleToFit(rect, widget.size) : 1.0;
-      scale = Tween<double>(
-        begin: scaleBegin,
-        end: scaleEnd,
-      ).animate(_controller);
+  void _resetAnimation() {
+    final code = widget.highlight?.code;
+    final rect = _getCountryRect(code);
+    final focusBegin = focusPoint?.value ?? centerPoint;
+    final focusEnd = rect != null ? rect.center : centerPoint;
+    focusPoint = Tween<Offset>(
+      begin: focusBegin,
+      end: focusEnd,
+    ).animate(_controller);
 
-      _controller
-        ..reset()
-        ..forward();
-    }
+    final scaleBegin = scale?.value ?? 1.0;
+    final scaleEnd =
+        rect != null ? _calculateScaleToFit(rect, widget.size) : 1.0;
+    scale = Tween<double>(
+      begin: scaleBegin,
+      end: scaleEnd,
+    ).animate(_controller);
+
+    _controller
+      ..reset()
+      ..forward();
   }
 
   static double _calculateScaleToFit(Rect rect, Size size) {
