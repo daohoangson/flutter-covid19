@@ -35,16 +35,16 @@ class MapWidget extends StatelessWidget {
               LayoutBuilder(
                 builder: (_, bc) => _CustomPaint(
                   countries: api.hasData ? api.countries : null,
-                  highlight: app.highlightCountryCode,
+                  highlight: app.highlight,
                   order: app.order,
                   size: bc.biggest,
                 ),
               ),
-              if (app.highlightCountryCode != null)
+              if (app.highlight != null)
                 Positioned.directional(
                   child: IconButton(
                     icon: Icon(Icons.close),
-                    onPressed: () => app.highlightCountryCode = null,
+                    onPressed: () => app.setHighlight(Highlighter.search, null),
                   ),
                   start: 0,
                   textDirection: Directionality.of(context),
@@ -58,7 +58,7 @@ class MapWidget extends StatelessWidget {
 
 class _CustomPaint extends StatefulWidget {
   final Iterable<ApiCountry> countries;
-  final String highlight;
+  final ApiCountry highlight;
   final SortOrder order;
   final double progress;
   final Size size;
@@ -94,6 +94,8 @@ class _CustomPaintState extends State<_CustomPaint>
       duration: const Duration(milliseconds: 500),
       vsync: this,
     )..addListener(() => setState(() {}));
+
+    _resetAnimation();
   }
 
   @override
@@ -121,28 +123,30 @@ class _CustomPaintState extends State<_CustomPaint>
   void didUpdateWidget(_CustomPaint oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    if (widget.highlight != oldWidget.highlight) {
-      final code = widget.highlight;
-      final rect = _getCountryRect(code);
-      final focusBegin = focusPoint?.value ?? centerPoint;
-      final focusEnd = rect != null ? rect.center : centerPoint;
-      focusPoint = Tween<Offset>(
-        begin: focusBegin,
-        end: focusEnd,
-      ).animate(_controller);
+    if (widget.highlight != oldWidget.highlight) _resetAnimation();
+  }
 
-      final scaleBegin = scale?.value ?? 1.0;
-      final scaleEnd =
-          rect != null ? _calculateScaleToFit(rect, widget.size) : 1.0;
-      scale = Tween<double>(
-        begin: scaleBegin,
-        end: scaleEnd,
-      ).animate(_controller);
+  void _resetAnimation() {
+    final code = widget.highlight?.code;
+    final rect = _getCountryRect(code);
+    final focusBegin = focusPoint?.value ?? centerPoint;
+    final focusEnd = rect != null ? rect.center : centerPoint;
+    focusPoint = Tween<Offset>(
+      begin: focusBegin,
+      end: focusEnd,
+    ).animate(_controller);
 
-      _controller
-        ..reset()
-        ..forward();
-    }
+    final scaleBegin = scale?.value ?? 1.0;
+    final scaleEnd =
+        rect != null ? _calculateScaleToFit(rect, widget.size) : 1.0;
+    scale = Tween<double>(
+      begin: scaleBegin,
+      end: scaleEnd,
+    ).animate(_controller);
+
+    _controller
+      ..reset()
+      ..forward();
   }
 
   static double _calculateScaleToFit(Rect rect, Size size) {
@@ -198,7 +202,7 @@ class _CustomPaintState extends State<_CustomPaint>
 class _Painter extends CustomPainter {
   final Iterable<ApiCountry> countries;
   final Offset focusPoint;
-  final String highlight;
+  final ApiCountry highlight;
   final SortOrder order;
   final double progress;
   final double scale;
@@ -240,7 +244,7 @@ class _Painter extends CustomPainter {
       }
 
       if (highlight != null) {
-        _paint(canvas, _paints[0], highlight);
+        _paint(canvas, _paints[0], highlight.code);
       }
     } else {
       final codes = world_svg.getAvailableCountryCodes();

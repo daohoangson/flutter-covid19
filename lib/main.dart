@@ -1,6 +1,7 @@
 import 'package:covid19/api/api.dart';
 import 'package:covid19/api/who.dart';
 import 'package:covid19/app_state.dart';
+import 'package:covid19/search.dart';
 import 'package:covid19/widget/big_numbers.dart';
 import 'package:covid19/widget/map.dart';
 import 'package:covid19/widget/table.dart';
@@ -17,9 +18,13 @@ class MyApp extends StatelessWidget {
         home: MultiProvider(
           child: Scaffold(
             appBar: !kIsWeb
-                ? AppBar(title: Text('Covid-19 numbers worldwide'))
+                ? AppBar(
+                    actions: [CountrySearchButton.icon()],
+                    title: Text('Covid-19 numbers worldwide'),
+                  )
                 : null,
             body: _Body(),
+            floatingActionButton: kIsWeb ? CountrySearchButton.fab() : null,
           ),
           providers: [
             ChangeNotifierProvider.value(value: WhoApi.getInstance()),
