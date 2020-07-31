@@ -247,7 +247,6 @@ class _AutoFontSizeWidget extends StatelessWidget {
             child: child,
             style: DefaultTextStyle.of(context).style.copyWith(
                   fontSize: bc.maxWidth / widthFactor,
-                  height: bc.maxWidth / widthFactor / bc.maxHeight,
                 )),
       );
 }
