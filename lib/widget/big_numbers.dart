@@ -184,7 +184,7 @@ class _Card extends StatelessWidget {
                                 ],
                               )
                             : _buildTitle(),
-                        widthFactor: 22,
+                        widthFactor: 12,
                       ),
                     ),
                     Expanded(
@@ -197,10 +197,10 @@ class _Card extends StatelessWidget {
                                 ),
                                 widthFactor: 1,
                               ),
-                              widthFactor: 7,
+                              widthFactor: 6,
                             )
                           : const SizedBox.shrink(),
-                      flex: 6,
+                      flex: 2,
                     ),
                     if (number2 != null && title2 != null)
                       Expanded(
@@ -210,9 +210,8 @@ class _Card extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.fade,
                           ),
-                          widthFactor: 14,
+                          widthFactor: 12,
                         ),
-                        flex: 2,
                       )
                   ],
                   crossAxisAlignment: CrossAxisAlignment.start,
