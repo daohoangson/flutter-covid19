@@ -21,8 +21,7 @@ class _TableState extends State<TableWidget> {
   @override
   Widget build(BuildContext _) => Consumer2<Api, AppState>(
         builder: (_, api, app, __) => api.hasData
-            ? SafeArea(
-                child: LayoutBuilder(
+            ? LayoutBuilder(
                 builder: (_, bc) => _buildTable(
                   api,
                   app,
@@ -30,7 +29,7 @@ class _TableState extends State<TableWidget> {
                       ? layoutBoth
                       : app.order.isNew ? layoutNew : layoutTotal,
                 ),
-              ))
+              )
             : Text(api.error?.toString() ??
                 'API data is unavailable. Please try again later'),
       );

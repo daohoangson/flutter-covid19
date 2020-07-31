@@ -1,6 +1,7 @@
 import 'package:covid19/api/api.dart';
 import 'package:covid19/api/who.dart';
 import 'package:covid19/app_state.dart';
+import 'package:covid19/layout.dart';
 import 'package:covid19/search.dart';
 import 'package:covid19/widget/big_numbers.dart';
 import 'package:covid19/widget/map.dart';
@@ -36,14 +37,18 @@ class MyApp extends StatelessWidget {
 
 class _Body extends StatelessWidget {
   @override
-  Widget build(BuildContext _) => Consumer<Api>(
-        builder: (_, api, child) =>
-            api.hasData ? child : _ProgressIndicator(value: api.progress),
-        child: LayoutBuilder(
-          builder: (_, bc) =>
-              bc.maxWidth < bc.maxHeight ? _LayoutMobile() : _LayoutTablet(),
-        ),
-      );
+  Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
+    final child = screenSize.width < screenSize.height
+        ? _Portrait()
+        : _Landscape(screenSize: screenSize);
+
+    return Consumer<Api>(
+      builder: (_, api, child) =>
+          api.hasData ? child : _ProgressIndicator(value: api.progress),
+      child: child,
+    );
+  }
 }
 
 class _ProgressIndicator extends StatelessWidget {
@@ -61,7 +66,7 @@ class _ProgressIndicator extends StatelessWidget {
         ));
 }
 
-class _LayoutMobile extends StatelessWidget {
+class _Portrait extends StatelessWidget {
   @override
   Widget build(BuildContext _) => Stack(
         children: [
@@ -80,22 +85,60 @@ class _LayoutMobile extends StatelessWidget {
       );
 }
 
-class _LayoutTablet extends StatelessWidget {
+class _Landscape extends StatelessWidget {
+  final Size screenSize;
+
+  const _Landscape({Key key, this.screenSize}) : super(key: key);
+
   @override
-  Widget build(BuildContext _) => Row(
-        children: [
-          AspectRatio(
-            aspectRatio: 1,
-            child: MapWidget(),
-          ),
-          Expanded(
-            child: Column(
-              children: <Widget>[
-                BigNumbersWidget(),
-                Expanded(child: TableWidget()),
-              ],
+  Widget build(BuildContext _) {
+    if (screenSize.height > Layout.kRequiredWidthForBoth) {
+      return _buildWide();
+    }
+
+    return _buildNormal();
+  }
+
+  Widget _buildNormal() => SafeArea(
+        child: Row(
+          children: [
+            AspectRatio(
+              aspectRatio: 1,
+              child: MapWidget(),
             ),
-          ),
-        ],
+            Expanded(
+              child: LayoutBuilder(
+                builder: (_, bc) => Column(
+                  children: [
+                    BigNumbersWidget(bc: bc),
+                    Expanded(child: TableWidget()),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+
+  Widget _buildWide() => SafeArea(
+        child: Row(
+          children: [
+            AspectRatio(
+              aspectRatio: 1,
+              child: Stack(
+                children: [
+                  Column(
+                    children: [
+                      BigNumbersPlaceholder(),
+                      Expanded(child: MapWidget()),
+                    ],
+                  ),
+                  Positioned(child: BigNumbersWidget()),
+                ],
+              ),
+            ),
+            Expanded(child: TableWidget()),
+          ],
+        ),
       );
 }

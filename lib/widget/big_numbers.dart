@@ -9,25 +9,31 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 class BigNumbersWidget extends StatelessWidget {
-  @override
-  Widget build(BuildContext _) => Consumer2<Api, AppState>(
-        builder: (_, api, app, __) => LayoutBuilder(
-          builder: (_, bc) {
-            final country = app.highlight != null
-                ? api.countries
-                    ?.where((country) => country == app.highlight)
-                    ?.first
-                : null;
-            final layout = BigNumbersPlaceholder._layout(bc);
+  final BoxConstraints bc;
 
-            return country != null
-                ? _buildCountry(country, layout)
-                : _buildWorld(api.worldLatest, layout);
-          },
-        ),
+  const BigNumbersWidget({this.bc, Key key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) =>
+      bc != null ? _build(context, bc) : LayoutBuilder(builder: _build);
+
+  static Widget _build(BuildContext _, BoxConstraints bc) =>
+      Consumer2<Api, AppState>(
+        builder: (_, api, app, __) {
+          final country = app.highlight != null
+              ? api.countries
+                  ?.where((country) => country == app.highlight)
+                  ?.first
+              : null;
+          final layout = BigNumbersPlaceholder._layout(bc);
+
+          return country != null
+              ? _buildCountry(country, layout)
+              : _buildWorld(api.worldLatest, layout);
+        },
       );
 
-  Widget _buildCountry(ApiCountry country, Layout layout) => Row(
+  static Widget _buildCountry(ApiCountry country, Layout layout) => Row(
         children: [
           Expanded(
             child: _Card(
@@ -73,7 +79,8 @@ class BigNumbersWidget extends StatelessWidget {
         ],
       );
 
-  Widget _buildGraph(ApiCountry country, GraphMode mode, SortOrderPair sop) {
+  static Widget _buildGraph(
+      ApiCountry country, GraphMode mode, SortOrderPair sop) {
     final record = country.latest;
     final sort = sop.asc;
     final color = kColors[sort.calculateSeriousness(record)];
@@ -87,7 +94,7 @@ class BigNumbersWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildWorld(ApiRecord worldLatest, Layout layout) => Row(
+  static Widget _buildWorld(ApiRecord worldLatest, Layout layout) => Row(
         children: [
           Expanded(
             child: _Card(
@@ -131,7 +138,9 @@ class BigNumbersPlaceholder extends StatelessWidget {
       );
 
   static Layout _layout(BoxConstraints bc) =>
-      bc.maxWidth > Layout.kRequiredWidthForBoth ? layoutBoth : layoutTotal;
+      bc.maxWidth > Layout.kRequiredWidthForBoth || bc.maxHeight < bc.maxWidth
+          ? layoutBoth
+          : layoutTotal;
 }
 
 class _Card extends StatelessWidget {
