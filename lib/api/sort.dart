@@ -1,67 +1,267 @@
 import 'package:covid19/api/api.dart';
+import 'package:flutter/material.dart';
 
 class SortOrder {
-  final int Function(ApiRecord, ApiRecord) _compare1;
-  final int Function(ApiRecord, ApiRecord) _compare2;
+  final _TypeAscDesc _typeAscDesc;
+  final _TypeCasesDeaths _typeCasesDeaths;
+  final _TypeNewTotal _typeNewTotal;
   final int Function(ApiRecord) measure;
+  final int Function(ApiRecord) _measure2;
+  final List<int> seriousnessValues;
 
-  const SortOrder(
-    this._compare1,
-    this._compare2,
+  const SortOrder._(
+    this._typeAscDesc,
+    this._typeCasesDeaths,
+    this._typeNewTotal,
     this.measure,
+    this._measure2,
+    this.seriousnessValues,
   );
 
+  factory SortOrder.fromString(String str) {
+    for (final pair in _pairs) {
+      if (pair.asc.toString() == str) return pair.asc;
+      if (pair.desc.toString() == str) return pair.desc;
+    }
+
+    return null;
+  }
+
+  bool get isAsc => _typeAscDesc == _TypeAscDesc.asc;
+
+  bool get isCases => _typeCasesDeaths == _TypeCasesDeaths.cases;
+
+  bool get isNew => _typeNewTotal == _TypeNewTotal.new_;
+
+  int calculateSeriousness(ApiRecord record) {
+    final value = measure(record);
+    final max = seriousnessValues.length;
+    for (var i = max - 1; i >= 0; i--) {
+      if (value > seriousnessValues[i]) {
+        return i + 1;
+      }
+    }
+
+    return 0;
+  }
+
+  SortOrder flipNewTotal() {
+    for (final pair in _pairs) {
+      final other = isAsc ? pair.asc : pair.desc;
+      if (other._typeCasesDeaths == _typeCasesDeaths &&
+          other._typeNewTotal != _typeNewTotal) {
+        return other;
+      }
+    }
+
+    return this;
+  }
+
   List<ApiCountry> sort(Iterable<ApiCountry> list) => [...list]..sort(_compare);
+
+  @override
+  String toString() =>
+      (isCases ? 'cases' : 'deaths') +
+      (isNew ? 'New' : 'Total') +
+      (isAsc ? 'Asc' : 'Desc');
 
   int _compare(ApiCountry a, ApiCountry b) {
     final aa = a.latest;
     final bb = b.latest;
 
-    var cmp = _compare1(aa, bb);
-    if (cmp == 0) {
-      cmp = _compare2(aa, bb);
-    }
+    final a1 = measure(aa);
+    final b1 = measure(bb);
+    final cmp1 = isAsc ? a1.compareTo(b1) : b1.compareTo(a1);
+    if (cmp1 != 0) return cmp1;
 
-    return cmp;
+    final a2 = _measure2(aa);
+    final b2 = _measure2(bb);
+    return isAsc ? a2.compareTo(b2) : b2.compareTo(a2);
   }
 }
 
-const casesTotalAsc = SortOrder(
-  _casesTotalAsc,
-  _deathsTotalAsc,
-  _casesTotal,
+class SortOrderPair {
+  final SortOrder asc;
+  final SortOrder desc;
+
+  const SortOrderPair._(this.asc, this.desc);
+
+  String get header =>
+      asc.isNew ? (asc.isCases ? 'New' : 'Today') : headerCasesDeaths;
+
+  String get headerCasesDeaths => asc.isCases ? 'Cases' : 'Deaths';
+
+  SortOrder flipAscDesc(SortOrder order) => order == desc ? asc : desc;
+}
+
+enum _TypeAscDesc {
+  asc,
+  desc,
+}
+
+enum _TypeCasesDeaths {
+  cases,
+  deaths,
+}
+
+enum _TypeNewTotal {
+  new_,
+  total,
+}
+
+const casesNew = SortOrderPair._(
+  SortOrder._(
+    _TypeAscDesc.asc,
+    _TypeCasesDeaths.cases,
+    _TypeNewTotal.new_,
+    _casesNew,
+    _deathsNew,
+    _seriousnessCasesNew,
+  ),
+  SortOrder._(
+    _TypeAscDesc.desc,
+    _TypeCasesDeaths.cases,
+    _TypeNewTotal.new_,
+    _casesNew,
+    _deathsNew,
+    _seriousnessCasesNew,
+  ),
 );
 
-const casesTotalDesc = SortOrder(
-  _casesTotalDesc,
-  _deathsTotalDesc,
-  _casesTotal,
+const casesTotal = SortOrderPair._(
+  SortOrder._(
+    _TypeAscDesc.asc,
+    _TypeCasesDeaths.cases,
+    _TypeNewTotal.total,
+    _casesTotal,
+    _deathsTotal,
+    _seriousnessCasesTotal,
+  ),
+  SortOrder._(
+    _TypeAscDesc.desc,
+    _TypeCasesDeaths.cases,
+    _TypeNewTotal.total,
+    _casesTotal,
+    _deathsTotal,
+    _seriousnessCasesTotal,
+  ),
 );
 
-const deathsTotalAsc = SortOrder(
-  _deathsTotalAsc,
-  _casesTotalAsc,
-  _deathsTotal,
+const deathsNew = SortOrderPair._(
+  SortOrder._(
+    _TypeAscDesc.asc,
+    _TypeCasesDeaths.deaths,
+    _TypeNewTotal.new_,
+    _deathsNew,
+    _casesNew,
+    _seriousnessDeathsNew,
+  ),
+  SortOrder._(
+    _TypeAscDesc.desc,
+    _TypeCasesDeaths.deaths,
+    _TypeNewTotal.new_,
+    _deathsNew,
+    _casesNew,
+    _seriousnessDeathsNew,
+  ),
 );
 
-const deathsTotalDesc = SortOrder(
-  _deathsTotalDesc,
-  _casesTotalDesc,
-  _deathsTotal,
+const deathsTotal = SortOrderPair._(
+  SortOrder._(
+    _TypeAscDesc.asc,
+    _TypeCasesDeaths.deaths,
+    _TypeNewTotal.total,
+    _deathsTotal,
+    _casesTotal,
+    _seriousnessDeathsTotal,
+  ),
+  SortOrder._(
+    _TypeAscDesc.desc,
+    _TypeCasesDeaths.deaths,
+    _TypeNewTotal.total,
+    _deathsTotal,
+    _casesTotal,
+    _seriousnessDeathsTotal,
+  ),
 );
+
+const _pairs = [
+  casesTotal,
+  casesNew,
+  deathsTotal,
+  deathsNew,
+];
+
+int _casesNew(ApiRecord r) => r.casesNew;
 
 int _casesTotal(ApiRecord r) => r.casesTotal;
 
+int _deathsNew(ApiRecord r) => r.deathsNew;
+
 int _deathsTotal(ApiRecord r) => r.deathsTotal;
 
-int _casesTotalAsc(ApiRecord a, ApiRecord b) =>
-    a.casesTotal.compareTo(b.casesTotal);
+const _seriousnessCasesNew = <int>[
+  -1,
+  0,
+  10,
+  50,
+  200,
+  1000,
+  5000,
+  20000,
+  50000,
+  100000,
+];
 
-int _casesTotalDesc(ApiRecord a, ApiRecord b) =>
-    b.casesTotal.compareTo(a.casesTotal);
+const _seriousnessCasesTotal = <int>[
+  -1,
+  10,
+  100,
+  1000,
+  10000,
+  50000,
+  200000,
+  1000000,
+  2000000,
+  5000000,
+];
 
-int _deathsTotalAsc(ApiRecord a, ApiRecord b) =>
-    a.deathsTotal.compareTo(b.deathsTotal);
+const _seriousnessDeathsNew = <int>[
+  -1,
+  0,
+  2,
+  5,
+  10,
+  20,
+  100,
+  500,
+  1000,
+  2000,
+];
 
-int _deathsTotalDesc(ApiRecord a, ApiRecord b) =>
-    b.deathsTotal.compareTo(a.deathsTotal);
+const _seriousnessDeathsTotal = <int>[
+  -1,
+  0,
+  10,
+  100,
+  500,
+  2000,
+  10000,
+  50000,
+  100000,
+  200000,
+];
+
+final kColors = <Color>[
+  Colors.black,
+  Colors.green[700],
+  Colors.green,
+  Colors.lime[600],
+  Colors.yellow[700],
+  Colors.orange,
+  Colors.orange[800],
+  Colors.red[600],
+  Colors.red[900],
+  Colors.purple[800],
+  Colors.black87,
+];

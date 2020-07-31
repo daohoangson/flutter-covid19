@@ -89,8 +89,7 @@ class _Painter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_Painter oldDelegate) =>
-      id != oldDelegate.id || mode != oldDelegate.mode;
+  bool shouldRepaint(_Painter other) => id != other.id || mode != other.mode;
 }
 
 enum GraphMode {
