@@ -131,7 +131,7 @@ class _CustomPaintState extends State<_CustomPaint>
 
   void _resetAnimation() {
     final code = widget.highlight?.code;
-    final rect = world_svg.getCountryByCode(code).rect;
+    final rect = world_svg.getCountryByCode(code)?.rect;
     final focusBegin = focusPoint?.value ?? centerPoint;
     final focusEnd = rect != null ? rect.center : centerPoint;
     focusPoint = Tween<Offset>(
