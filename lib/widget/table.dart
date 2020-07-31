@@ -131,9 +131,7 @@ class _ListState extends State<_ListView> {
   @override
   void initState() {
     super.initState();
-
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => _makeSureHighlightIsVisible(false));
+    _makeSureHighlightIsVisible(false);
   }
 
   @override
@@ -246,15 +244,10 @@ class _ListState extends State<_ListView> {
             : 0)
         .clamp(0, widget.countries.length - 1);
 
-    if (animate) {
-      _controller.scrollTo(
-        index: index,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.ease,
-      );
-    } else {
-      _controller.jumpTo(index: index);
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) => animate
+        ? _controller.scrollTo(
+            index: index, duration: const Duration(milliseconds: 500))
+        : _controller.jumpTo(index: index));
   }
 }
 
