@@ -131,7 +131,7 @@ class _CustomPaintState extends State<_CustomPaint>
 
   void _resetAnimation() {
     final code = widget.highlight?.code;
-    final rect = _getCountryRect(code);
+    final rect = world_svg.getCountryByCode(code).rect;
     final focusBegin = focusPoint?.value ?? centerPoint;
     final focusEnd = rect != null ? rect.center : centerPoint;
     focusPoint = Tween<Offset>(
@@ -162,43 +162,6 @@ class _CustomPaintState extends State<_CustomPaint>
     }
 
     return (width / rect.width).truncateToDouble().clamp(1.0, 10.0);
-  }
-
-  static Rect _getCountryRect(String countryCode) {
-    final commands = world_svg.getCommandsByCountryCode(countryCode);
-    if (commands.isEmpty) return null;
-
-    Offset prev;
-    double xMin, xMax, yMin, yMax;
-    Rect bestRect;
-
-    for (final command in commands) {
-      switch (command.type) {
-        case world_svg.CommandType.l:
-          final offset = prev + command.offset;
-          prev = offset;
-          xMin = min(xMin, offset.dx);
-          xMax = max(xMax, offset.dx);
-          yMin = min(yMin, offset.dy);
-          yMax = max(yMax, offset.dy);
-          break;
-        case world_svg.CommandType.m:
-          final offset = (prev ?? Offset(0, 0)) + command.offset;
-          prev = offset;
-          xMin = xMax = offset.dx;
-          yMin = yMax = offset.dy;
-          break;
-        case world_svg.CommandType.z:
-          final rect = Rect.fromLTRB(xMin, yMin, xMax, yMax);
-          if (bestRect == null ||
-              rect.width * rect.height > bestRect.width * bestRect.height) {
-            bestRect = rect;
-          }
-          break;
-      }
-    }
-
-    return bestRect;
   }
 }
 
@@ -328,49 +291,8 @@ class _Painter extends CustomPainter {
   ];
 
   static void _paintCountry(Canvas canvas, Paint paint, String code) {
-    final commands = world_svg.getCommandsByCountryCode(code);
-
-    var pathCount = 0;
-    List<Offset> points;
-    double xMin, xMax, yMin, yMax;
-
-    for (final command in commands) {
-      switch (command.type) {
-        case world_svg.CommandType.l:
-          final offset = points.last + command.offset;
-          points.add(offset);
-          xMin = min(xMin, offset.dx);
-          xMax = max(xMax, offset.dx);
-          yMin = min(yMin, offset.dy);
-          yMax = max(yMax, offset.dy);
-          break;
-        case world_svg.CommandType.m:
-          final offset =
-              (points?.isNotEmpty == true ? points.last : Offset(0, 0)) +
-                  command.offset;
-          points = [offset];
-          xMin = xMax = offset.dx;
-          yMin = yMax = offset.dy;
-          break;
-        case world_svg.CommandType.z:
-          if (pathCount > 0) {
-            final area = (xMax - xMin) * (yMax - yMin);
-            if (area < 50) {
-              // skip drawing path if the area is too small (practially invisible)
-              // without the check, we were drawing up to 1.5k paths
-              // currently we are only drawing 300 of those
-              continue;
-            }
-          }
-
-          final path = Path();
-          path.addPolygon(points, true);
-          canvas.drawPath(path, paint);
-
-          pathCount++;
-          break;
-      }
-    }
+    final path = world_svg.getCountryByCode(code).path;
+    canvas.drawPath(path, paint);
   }
 
   static void _paintLegend(

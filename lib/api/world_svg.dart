@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/painting.dart';
 
 /*
@@ -523,55 +525,77 @@ const _kCountries = {
 const kHeight = 665.96301;
 const kWidth = 1009.6727;
 
-final _commands = Map<String, Iterable<Command>>();
+final _countries = Map<String, SvgCountry>();
 
-class Command {
-  final CommandType type;
-  final Offset offset;
+class SvgCountry {
+  final Path path;
+  final Rect rect;
 
-  Command.l(this.offset) : type = CommandType.l;
-
-  Command.m(this.offset) : type = CommandType.m;
-
-  Command.z()
-      : type = CommandType.z,
-        offset = null;
-
-  @override
-  String toString() => '$type($offset)';
+  SvgCountry(this.path, this.rect);
 }
-
-enum CommandType { l, m, z }
 
 Iterable<String> getAvailableCountryCodes() => _kCountries.keys;
 
-Iterable<Command> getCommandsByCountryCode(String code) {
-  if (!_commands.containsKey(code)) {
-    final commands = <Command>[];
+SvgCountry getCountryByCode(String code) {
+  if (!_countries.containsKey(code)) {
+    final path = Path();
     if (_kCountries.containsKey(code)) {
       final parts = _kCountries[code].split(' ');
       final i = parts.iterator;
+
+      var pathCount = 0;
+      List<Offset> points;
+      double xMin, xMax, yMin, yMax;
+      Rect largest;
+
       while (i.moveNext()) {
         final part = i.current;
         switch (part) {
           case 'm':
             if (i.moveNext()) {
-              commands.add(Command.m(_parseOffset(i.current)));
+              final offset =
+                  (points?.isNotEmpty == true ? points.last : Offset(0, 0)) +
+                      _parseOffset(i.current);
+              points = [offset];
+              xMin = xMax = offset.dx;
+              yMin = yMax = offset.dy;
             }
             break;
           case 'z':
-            commands.add(Command.z());
+            if (pathCount > 0) {
+              final area = (xMax - xMin) * (yMax - yMin);
+              if (area < 50) {
+                // skip drawing path if the area is too small (practially invisible)
+                // without the check, we were drawing up to 1.5k paths
+                // currently we are only drawing 300 of those
+                continue;
+              }
+            }
+
+            final rect = Rect.fromLTRB(xMin, yMin, xMax, yMax);
+            if (largest == null ||
+                rect.width * rect.height > largest.width * largest.height) {
+              largest = rect;
+            }
+
+            path.addPolygon(points, true);
+            pathCount++;
             break;
           default:
-            commands.add(Command.l(_parseOffset(part)));
+            final offset = points.last + _parseOffset(part);
+            points.add(offset);
+            xMin = min(xMin, offset.dx);
+            xMax = max(xMax, offset.dx);
+            yMin = min(yMin, offset.dy);
+            yMax = max(yMax, offset.dy);
         }
       }
-    }
 
-    _commands[code] = commands;
+      _countries[code] = SvgCountry(path, largest);
+    }
   }
 
-  return _commands[code];
+  return _countries[code];
 }
 
 Offset _parseOffset(String str) {
