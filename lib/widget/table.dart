@@ -224,11 +224,9 @@ class _ListState extends State<_ListView> {
             ),
             Positioned.fill(
               child: GraphWidget(
-                color: color,
-                id: "${country.code}-$sort",
-                measureFn: sort.measure,
+                country: country,
                 mode: graphMode,
-                records: country.records,
+                sort: sort,
               ),
             ),
           ],
