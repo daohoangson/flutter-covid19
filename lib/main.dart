@@ -67,7 +67,7 @@ class _LayoutMobile extends StatelessWidget {
         children: [
           Column(
             children: [
-              AspectRatio(aspectRatio: BigNumbersWidget.kPreferredAspectRatio),
+              BigNumbersPlaceholder(),
               AspectRatio(
                 aspectRatio: kMapPreferredRatio,
                 child: MapWidget(),

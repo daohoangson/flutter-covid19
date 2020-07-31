@@ -1,6 +1,7 @@
 import 'package:covid19/api/api.dart';
 import 'package:covid19/api/sort.dart';
 import 'package:covid19/app_state.dart';
+import 'package:covid19/layout.dart';
 import 'package:covid19/widget/toggler.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -25,16 +26,16 @@ class _TableState extends State<TableWidget> {
                 builder: (_, bc) => _buildTable(
                   api,
                   app,
-                  bc.maxWidth > 600
-                      ? _layoutBoth
-                      : app.order.isNew ? _layoutNew : _layoutTotal,
+                  bc.maxWidth > Layout.kRequiredWidthForBoth
+                      ? layoutBoth
+                      : app.order.isNew ? layoutNew : layoutTotal,
                 ),
               ))
             : Text(api.error?.toString() ??
                 'API data is unavailable. Please try again later'),
       );
 
-  Widget _buildTable(Api api, AppState app, _Layout layout) {
+  Widget _buildTable(Api api, AppState app, Layout layout) {
     final order = app.order;
     if (_sortedOrder != order) {
       _sortedList = order.sort(api.countries);
@@ -77,7 +78,7 @@ class _TableState extends State<TableWidget> {
         ),
       );
 
-  Widget _buildHeader(SortOrderPair pair, SortOrder order, _Layout layout) =>
+  Widget _buildHeader(SortOrderPair pair, SortOrder order, Layout layout) =>
       Tooltip(
         child: InkWell(
           child: _NumberBox(
@@ -92,25 +93,11 @@ class _TableState extends State<TableWidget> {
       );
 }
 
-@immutable
-class _Layout {
-  final bool showNew;
-  final bool showTotal;
-
-  const _Layout(this.showNew, this.showTotal);
-
-  bool get showBoth => showNew && showTotal;
-}
-
-const _layoutTotal = _Layout(false, true);
-const _layoutNew = _Layout(true, false);
-const _layoutBoth = _Layout(true, true);
-
 class _ListView extends StatefulWidget {
   final List<ApiCountry> countries;
   final ApiCountry highlight;
   final Highlighter highlighter;
-  final _Layout layout;
+  final Layout layout;
 
   const _ListView({
     @required this.countries,
