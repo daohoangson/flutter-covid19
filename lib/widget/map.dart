@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:math';
 
 import 'package:covid19/api/api.dart';
@@ -220,6 +221,11 @@ class _Painter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    Timeline.startSync('Covid-19 map', arguments: {
+      'hasCountries': countries != null,
+      'scale': scale,
+    });
+
     final ratio = world_svg.kWidth / world_svg.kHeight;
     var width = size.width;
     var height = width / ratio;
@@ -270,6 +276,8 @@ class _Painter extends CustomPainter {
         _paintLegend(canvas, size, i, order.seriousnessValues[i - 1]);
       }
     }
+
+    Timeline.finishSync();
   }
 
   @override
