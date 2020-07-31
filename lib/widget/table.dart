@@ -1,7 +1,7 @@
 import 'package:covid19/api/api.dart';
 import 'package:covid19/api/sort.dart';
 import 'package:covid19/app_state.dart';
-import 'package:covid19/widget/graph.dart';
+import 'package:covid19/layout.dart';
 import 'package:covid19/widget/toggler.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +10,8 @@ import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 class TableWidget extends StatefulWidget {
+  static const kMinWidth = _NumberBox.kWidth * 5;
+
   @override
   _TableState createState() => _TableState();
 }
@@ -21,21 +23,20 @@ class _TableState extends State<TableWidget> {
   @override
   Widget build(BuildContext _) => Consumer2<Api, AppState>(
         builder: (_, api, app, __) => api.hasData
-            ? SafeArea(
-                child: LayoutBuilder(
+            ? LayoutBuilder(
                 builder: (_, bc) => _buildTable(
                   api,
                   app,
-                  bc.maxWidth > 600
-                      ? _layoutBoth
-                      : app.order.isNew ? _layoutNew : _layoutTotal,
+                  bc.maxWidth > Layout.kRequiredWidthForBoth
+                      ? layoutBoth
+                      : app.order.isNew ? layoutNew : layoutTotal,
                 ),
-              ))
+              )
             : Text(api.error?.toString() ??
                 'API data is unavailable. Please try again later'),
       );
 
-  Widget _buildTable(Api api, AppState app, _Layout layout) {
+  Widget _buildTable(Api api, AppState app, Layout layout) {
     final order = app.order;
     if (_sortedOrder != order) {
       _sortedList = order.sort(api.countries);
@@ -78,7 +79,7 @@ class _TableState extends State<TableWidget> {
         ),
       );
 
-  Widget _buildHeader(SortOrderPair pair, SortOrder order, _Layout layout) =>
+  Widget _buildHeader(SortOrderPair pair, SortOrder order, Layout layout) =>
       Tooltip(
         child: InkWell(
           child: _NumberBox(
@@ -93,25 +94,11 @@ class _TableState extends State<TableWidget> {
       );
 }
 
-@immutable
-class _Layout {
-  final bool showNew;
-  final bool showTotal;
-
-  const _Layout(this.showNew, this.showTotal);
-
-  bool get showBoth => showNew && showTotal;
-}
-
-const _layoutTotal = _Layout(false, true);
-const _layoutNew = _Layout(true, false);
-const _layoutBoth = _Layout(true, true);
-
 class _ListView extends StatefulWidget {
   final List<ApiCountry> countries;
   final ApiCountry highlight;
   final Highlighter highlighter;
-  final _Layout layout;
+  final Layout layout;
 
   const _ListView({
     @required this.countries,
@@ -165,29 +152,19 @@ class _ListState extends State<_ListView> {
           children: [
             Expanded(child: _buildName(number, country)),
             if (widget.layout.showTotal)
-              _buildNumber(
-                country: country,
-                graphMode: GraphMode.line,
-                sop: deathsTotal,
-              ),
+              _buildNumber(country: country, sop: deathsTotal),
             if (widget.layout.showNew)
               _buildNumber(
                 country: country,
                 data: '+${_formatNumber(country.latest.deathsNew)}',
-                graphMode: GraphMode.bar,
                 sop: deathsNew,
               ),
             if (widget.layout.showTotal)
-              _buildNumber(
-                country: country,
-                graphMode: GraphMode.line,
-                sop: casesTotal,
-              ),
+              _buildNumber(country: country, sop: casesTotal),
             if (widget.layout.showNew)
               _buildNumber(
                 country: country,
                 data: '+${_formatNumber(country.latest.casesNew)}',
-                graphMode: GraphMode.bar,
                 sop: casesNew,
               ),
           ],
@@ -206,39 +183,13 @@ class _ListState extends State<_ListView> {
         padding: const EdgeInsets.all(8),
       );
 
-  Widget _buildNumber({
-    ApiCountry country,
-    String data,
-    GraphMode graphMode,
-    SortOrderPair sop,
-  }) {
-    final record = country.latest;
-    final sort = sop.asc;
-    final color = kColors[sort.calculateSeriousness(record)];
-
-    return _NumberBox(
-      child: Padding(
-        child: Stack(
-          children: [
-            _NumberText(
-              data ?? _formatNumber(sort.measure(record)),
-              color: color,
-            ),
-            Positioned.fill(
-              child: GraphWidget(
-                color: color,
-                id: "${country.code}-$sort",
-                measureFn: sort.measure,
-                mode: graphMode,
-                records: country.records,
-              ),
-            ),
-          ],
+  Widget _buildNumber({ApiCountry country, String data, SortOrderPair sop}) =>
+      _NumberBox(
+        child: _NumberText(
+          data ?? _formatNumber(sop.asc.measure(country.latest)),
+          color: kColors[sop.asc.calculateSeriousness(country.latest)],
         ),
-        padding: const EdgeInsets.symmetric(vertical: 4),
-      ),
-    );
-  }
+      );
 
   void _makeSureHighlightIsVisible(bool animate) {
     final index = (widget.highlight != null
@@ -259,12 +210,14 @@ class _ListState extends State<_ListView> {
 }
 
 class _NumberBox extends StatelessWidget {
+  static const kWidth = 75.0;
+
   final Widget child;
 
   const _NumberBox({this.child, Key key}) : super(key: key);
 
   @override
-  Widget build(BuildContext _) => SizedBox(child: child, width: 75);
+  Widget build(BuildContext _) => SizedBox(child: child, width: kWidth);
 }
 
 class _NumberText extends StatelessWidget {

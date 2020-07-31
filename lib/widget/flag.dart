@@ -10,9 +10,6 @@ class FlagWidget extends StatefulWidget {
 }
 
 class _FlagState extends State<FlagWidget> {
-  static const kPreferredHeight = 24.0;
-  static const kPreferredWidth = 32.0;
-
   bool imageOk;
 
   ImageProvider get image =>
@@ -32,14 +29,13 @@ class _FlagState extends State<FlagWidget> {
   }
 
   @override
-  Widget build(BuildContext context) => SizedBox(
+  Widget build(BuildContext context) => AspectRatio(
+        aspectRatio: 4 / 3,
         child: imageOk == true
             ? Image(
                 image: image,
                 fit: BoxFit.cover,
               )
             : imageOk == false ? Text(widget.iso) : null,
-        height: kPreferredHeight,
-        width: kPreferredWidth,
       );
 }
