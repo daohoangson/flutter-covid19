@@ -158,7 +158,7 @@ class _CustomPaintState extends State<_CustomPaint>
       width = height * ratio;
     }
 
-    return min(10, width / rect.width * .5);
+    return (width / rect.width).truncateToDouble().clamp(1.0, 10.0);
   }
 
   static Rect _getCountryRect(String countryCode) {
