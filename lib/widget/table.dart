@@ -1,7 +1,6 @@
 import 'package:covid19/api/api.dart';
 import 'package:covid19/api/sort.dart';
 import 'package:covid19/app_state.dart';
-import 'package:covid19/widget/graph.dart';
 import 'package:covid19/widget/toggler.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -165,29 +164,19 @@ class _ListState extends State<_ListView> {
           children: [
             Expanded(child: _buildName(number, country)),
             if (widget.layout.showTotal)
-              _buildNumber(
-                country: country,
-                graphMode: GraphMode.line,
-                sop: deathsTotal,
-              ),
+              _buildNumber(country: country, sop: deathsTotal),
             if (widget.layout.showNew)
               _buildNumber(
                 country: country,
                 data: '+${_formatNumber(country.latest.deathsNew)}',
-                graphMode: GraphMode.bar,
                 sop: deathsNew,
               ),
             if (widget.layout.showTotal)
-              _buildNumber(
-                country: country,
-                graphMode: GraphMode.line,
-                sop: casesTotal,
-              ),
+              _buildNumber(country: country, sop: casesTotal),
             if (widget.layout.showNew)
               _buildNumber(
                 country: country,
                 data: '+${_formatNumber(country.latest.casesNew)}',
-                graphMode: GraphMode.bar,
                 sop: casesNew,
               ),
           ],
@@ -206,39 +195,13 @@ class _ListState extends State<_ListView> {
         padding: const EdgeInsets.all(8),
       );
 
-  Widget _buildNumber({
-    ApiCountry country,
-    String data,
-    GraphMode graphMode,
-    SortOrderPair sop,
-  }) {
-    final record = country.latest;
-    final sort = sop.asc;
-    final color = kColors[sort.calculateSeriousness(record)];
-
-    return _NumberBox(
-      child: Padding(
-        child: Stack(
-          children: [
-            _NumberText(
-              data ?? _formatNumber(sort.measure(record)),
-              color: color,
-            ),
-            Positioned.fill(
-              child: GraphWidget(
-                color: color,
-                id: "${country.code}-$sort",
-                measureFn: sort.measure,
-                mode: graphMode,
-                records: country.records,
-              ),
-            ),
-          ],
+  Widget _buildNumber({ApiCountry country, String data, SortOrderPair sop}) =>
+      _NumberBox(
+        child: _NumberText(
+          data ?? _formatNumber(sop.asc.measure(country.latest)),
+          color: kColors[sop.asc.calculateSeriousness(country.latest)],
         ),
-        padding: const EdgeInsets.symmetric(vertical: 4),
-      ),
-    );
-  }
+      );
 
   void _makeSureHighlightIsVisible(bool animate) {
     final index = (widget.highlight != null
