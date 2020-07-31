@@ -96,7 +96,7 @@ class _Painter extends CustomPainter {
 
   static final _paints = kColors
       .map((color) => Paint()
-        ..color = color
+        ..color = color.withOpacity(.75)
         ..strokeWidth = 2)
       .toList(growable: false);
 
