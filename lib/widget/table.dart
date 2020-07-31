@@ -10,6 +10,8 @@ import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 class TableWidget extends StatefulWidget {
+  static const kMinWidth = _NumberBox.kWidth * 5;
+
   @override
   _TableState createState() => _TableState();
 }
@@ -208,12 +210,14 @@ class _ListState extends State<_ListView> {
 }
 
 class _NumberBox extends StatelessWidget {
+  static const kWidth = 75.0;
+
   final Widget child;
 
   const _NumberBox({this.child, Key key}) : super(key: key);
 
   @override
-  Widget build(BuildContext _) => SizedBox(child: child, width: 75);
+  Widget build(BuildContext _) => SizedBox(child: child, width: kWidth);
 }
 
 class _NumberText extends StatelessWidget {

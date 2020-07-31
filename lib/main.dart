@@ -92,18 +92,27 @@ class _Landscape extends StatelessWidget {
 
   @override
   Widget build(BuildContext _) {
-    if (screenSize.height > Layout.kRequiredWidthForBoth) {
-      return _buildWide();
+    var mapAspectRatio = 1.0;
+    var mapWidth = screenSize.height;
+    var tableWidth = screenSize.width - mapWidth;
+    if (tableWidth < TableWidget.kMinWidth) {
+      tableWidth = TableWidget.kMinWidth * 1.1;
+      mapWidth = screenSize.width - tableWidth;
+      mapAspectRatio = mapWidth / screenSize.height;
     }
 
-    return _buildNormal();
+    if (mapWidth > Layout.kRequiredWidthForBoth) {
+      return _buildWide(mapAspectRatio);
+    }
+
+    return _buildNormal(mapAspectRatio);
   }
 
-  Widget _buildNormal() => SafeArea(
+  Widget _buildNormal(double mapAspectRatio) => SafeArea(
         child: Row(
           children: [
             AspectRatio(
-              aspectRatio: 1,
+              aspectRatio: mapAspectRatio,
               child: MapWidget(),
             ),
             Expanded(
@@ -120,11 +129,11 @@ class _Landscape extends StatelessWidget {
         ),
       );
 
-  Widget _buildWide() => SafeArea(
+  Widget _buildWide(double mapAspectRatio) => SafeArea(
         child: Row(
           children: [
             AspectRatio(
-              aspectRatio: 1,
+              aspectRatio: mapAspectRatio,
               child: Stack(
                 children: [
                   Column(
