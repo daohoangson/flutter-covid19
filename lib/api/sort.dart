@@ -33,8 +33,8 @@ class SortOrder {
 
   bool get isNew => _typeNewTotal == _TypeNewTotal.new_;
 
-  int calculateSeriousness(ApiRecord record) {
-    final value = measure(record);
+  int calculateSeriousness({ApiRecord record, int value}) {
+    value ??= measure(record);
     final max = seriousnessValues.length;
     for (var i = max - 1; i >= 0; i--) {
       if (value > seriousnessValues[i]) {

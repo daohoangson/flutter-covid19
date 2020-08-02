@@ -185,7 +185,7 @@ class _ListState extends State<_ListView> {
       _NumberBox(
         child: _NumberText(
           data ?? _formatNumber(sop.asc.measure(country.latest)),
-          color: kColors[sop.asc.calculateSeriousness(country.latest)],
+          color: kColors[sop.asc.calculateSeriousness(record: country.latest)],
         ),
       );
 

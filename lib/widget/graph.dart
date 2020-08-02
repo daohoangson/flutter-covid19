@@ -1,5 +1,6 @@
 import 'dart:developer';
 import 'dart:math';
+import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:covid19/api/api.dart';
@@ -33,6 +34,11 @@ class _Painter extends CustomPainter {
   final GraphMode mode;
   final SortOrder sort;
 
+  var _maxX = 0.0;
+  var _maxY = 0.0;
+  List<Rect> _rects;
+  List<Offset> _points;
+
   _Painter({
     @required this.country,
     @required this.mode,
@@ -47,43 +53,55 @@ class _Painter extends CustomPainter {
       'sort': sort.toString(),
     });
 
-    final x0 = DateTime(2020, 2, 24);
-    final now = DateTime.now();
-    final xUpper = DateTime(now.year, now.month, now.day).difference(x0).inDays;
-    final data = _PaintingData(
-      mode: mode,
-      size: size,
-      xScale: size.width / xUpper,
-    );
+    _prePaint();
 
-    for (final record in country.records) {
-      final x = record.date.difference(x0).inDays;
-      if (x < 0) continue;
+    final scaleX = _maxX > 0 ? size.width / _maxX : 1;
+    final scaleY = _maxY > 0 ? size.height / _maxY : 1;
+    switch (mode) {
+      case GraphMode.bar:
+        canvas.save();
 
-      final y = sort.measure(record);
-      _drawPoint(data, x, y);
+        // with a single transformation, we are doing three things:
+        // - vertical flip
+        // - scaling
+        // - and finally a downward move (because of the flip)
+        canvas.transform(Float64List.fromList([
+          scaleX, // scaling
+          0,
+          0,
+          0,
+          0,
+          -scaleY, // flip and scaling
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          size.height, // downward move
+          0,
+          1
+        ]));
+
+        for (final rect in _rects) {
+          final value = rect.bottom.toInt();
+          final paint = _paints[sort.calculateSeriousness(value: value)];
+          canvas.drawRect(rect, paint);
+        }
+
+        canvas.restore();
+        break;
+      case GraphMode.line:
+        canvas.drawPoints(
+          PointMode.polygon,
+          _points
+              .map((p) => Offset(p.dx * scaleX, size.height - p.dy * scaleY))
+              .toList(growable: false),
+          _paints[sort.calculateSeriousness(record: country.latest)],
+        );
+        break;
     }
-
-    canvas.save();
-    canvas.rotate(pi);
-    canvas.translate(-size.width, -size.height);
-
-    final paint = _paints[sort.calculateSeriousness(country.latest)];
-    final scale = size.height / data.yMax;
-    if (data.path != null) {
-      canvas.save();
-      if (scale < 1) canvas.scale(1, scale);
-      canvas.drawPath(data.path, paint);
-      canvas.restore();
-    } else {
-      canvas.drawPoints(
-        PointMode.polygon,
-        data.points.map((p) => p.scale(1, scale)).toList(growable: false),
-        paint,
-      );
-    }
-
-    canvas.restore();
 
     Timeline.finishSync();
   }
@@ -94,51 +112,47 @@ class _Painter extends CustomPainter {
       mode != other.mode ||
       sort != other.sort;
 
+  void _prePaint() {
+    switch (mode) {
+      case GraphMode.bar:
+        if (_rects != null) return;
+        _rects = [];
+        break;
+      case GraphMode.line:
+        if (_points != null) return;
+        _points = [Offset(0, 0)];
+        break;
+    }
+
+    DateTime x0;
+    for (final record in country.records) {
+      x0 ??= record.date;
+      final x = record.date.difference(x0).inDays.toDouble();
+      if (x < 0) continue;
+
+      final y = sort.measure(record).toDouble();
+      switch (mode) {
+        case GraphMode.bar:
+          _rects.add(Rect.fromLTRB(x - 1, 0, x, y));
+          break;
+        case GraphMode.line:
+          _points.add(Offset(x, y));
+          break;
+      }
+
+      _maxX = max(_maxX, x);
+      _maxY = max(_maxY, y);
+    }
+  }
+
   static final _paints = kColors
       .map((color) => Paint()
         ..color = color.withOpacity(.75)
         ..strokeWidth = 2)
       .toList(growable: false);
-
-  static void _drawPoint(_PaintingData data, int x, int y) {
-    // we are drawing backward from the top right corner
-    // the canvas will be rotated later to fix the graph direction
-    // this is done to simplify the y scaling logic
-    // we already know [_PaintingData.xScale] before hand so x axis is easy
-    final offset = Offset(data.size.width - x * data.xScale, y * 1.0);
-
-    if (data.path != null) {
-      // bar mode
-      final r = Rect.fromLTRB(offset.dx - data.xScale, 0, offset.dx, offset.dy);
-      data.path.addRect(r);
-    } else {
-      // line mode
-      data.points.add(offset);
-    }
-
-    data.prev = offset;
-    data.yMax = max(data.yMax, y);
-  }
 }
 
 enum GraphMode {
   bar,
   line,
-}
-
-class _PaintingData {
-  final Path path;
-  final List<Offset> points;
-  Offset prev;
-  final Size size;
-  final double xScale;
-  var yMax = 1;
-
-  _PaintingData({
-    @required GraphMode mode,
-    @required this.size,
-    @required this.xScale,
-  })  : path = mode == GraphMode.bar ? Path() : null,
-        points = mode == GraphMode.bar ? null : [Offset(size.width, 0)],
-        prev = Offset(size.width, 0);
 }

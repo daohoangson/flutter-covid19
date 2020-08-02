@@ -211,7 +211,7 @@ class _Painter extends CustomPainter {
     if (countries != null) {
       for (final country in countries) {
         final seriousness = order
-            .calculateSeriousness(country.latest)
+            .calculateSeriousness(record: country.latest)
             .clamp(0, _paints.length - 1);
         _paintCountry(canvas, _paints[seriousness], country.code);
       }
