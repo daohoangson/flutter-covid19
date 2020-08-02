@@ -1,15 +1,13 @@
 import 'dart:developer';
 import 'dart:math';
 
-import 'package:covid19/api/api.dart';
-import 'package:covid19/api/sort.dart';
-import 'package:covid19/api/world_svg.dart' as world_svg;
+import 'package:covid19/data/api.dart';
+import 'package:covid19/data/sort.dart';
+import 'package:covid19/data/svg.dart';
 import 'package:covid19/app_state.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:provider/provider.dart';
-
-const kMapPreferredRatio = world_svg.kWidth / world_svg.kHeight;
 
 class MapProgressIndicator extends StatelessWidget {
   final double value;
@@ -17,14 +15,18 @@ class MapProgressIndicator extends StatelessWidget {
   const MapProgressIndicator({Key key, @required this.value}) : super(key: key);
 
   @override
-  Widget build(BuildContext _) => Padding(
-        child: LayoutBuilder(
-          builder: (_, bc) => _CustomPaint(
-            progress: value,
-            size: bc.biggest,
+  Widget build(BuildContext _) => Selector<AppState, bool>(
+        builder: (_, useHqMap, __) => Padding(
+          child: LayoutBuilder(
+            builder: (_, bc) => _CustomPaint(
+              progress: value,
+              size: bc.biggest,
+              useHqMap: useHqMap,
+            ),
           ),
+          padding: const EdgeInsets.all(8),
         ),
-        padding: const EdgeInsets.all(8),
+        selector: (_, app) => app.useHqMap,
       );
 }
 
@@ -40,6 +42,7 @@ class MapWidget extends StatelessWidget {
                   highlight: app.highlight,
                   order: app.order,
                   size: bc.biggest,
+                  useHqMap: app.useHqMap,
                 ),
               ),
               if (app.highlight != null)
@@ -65,14 +68,16 @@ class _CustomPaint extends StatefulWidget {
   final SortOrder order;
   final double progress;
   final Size size;
+  final bool useHqMap;
 
-  const _CustomPaint({
+  _CustomPaint({
     this.countries,
     this.highlight,
     Key key,
     this.order,
     this.progress = 1,
     @required this.size,
+    this.useHqMap = false,
   }) : super(key: key);
 
   @override
@@ -81,13 +86,13 @@ class _CustomPaint extends StatefulWidget {
 
 class _CustomPaintState extends State<_CustomPaint>
     with TickerProviderStateMixin {
-  static const centerPoint =
-      Offset(world_svg.kWidth / 2, world_svg.kHeight / 2);
-
   AnimationController _controller;
 
   Animation<Offset> focusPoint;
   Animation<double> scale;
+
+  Offset get centerPoint => Offset(map.width / 2, map.height / 2);
+  SvgMap get map => widget.useHqMap == true ? hqMap : sdMap;
 
   @override
   initState() {
@@ -112,8 +117,9 @@ class _CustomPaintState extends State<_CustomPaint>
         child: CustomPaint(
           painter: _Painter(
             countries: widget.countries,
-            focusPoint: focusPoint?.value ?? centerPoint,
+            focusPoint: focusPoint?.value,
             highlight: widget.highlight,
+            map: map,
             order: widget.order,
             progress: widget.progress,
             scale: scale?.value ?? 1,
@@ -126,12 +132,15 @@ class _CustomPaintState extends State<_CustomPaint>
   void didUpdateWidget(_CustomPaint oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    if (widget.highlight != oldWidget.highlight) _resetAnimation();
+    if (widget.highlight != oldWidget.highlight ||
+        widget.useHqMap != oldWidget.useHqMap) {
+      _resetAnimation();
+    }
   }
 
   void _resetAnimation() {
     final code = widget.highlight?.code;
-    final rect = world_svg.getCountryByCode(code)?.rect;
+    final rect = map.getCountryByCode(code)?.rect;
     final focusBegin = focusPoint?.value ?? centerPoint;
     final focusEnd = rect != null ? rect.center : centerPoint;
     focusPoint = Tween<Offset>(
@@ -169,6 +178,7 @@ class _Painter extends CustomPainter {
   final Iterable<ApiCountry> countries;
   final Offset focusPoint;
   final ApiCountry highlight;
+  final SvgMap map;
   final SortOrder order;
   final double progress;
   final double scale;
@@ -177,6 +187,7 @@ class _Painter extends CustomPainter {
     this.countries,
     this.focusPoint,
     this.highlight,
+    @required this.map,
     this.order,
     this.progress,
     this.scale,
@@ -189,7 +200,7 @@ class _Painter extends CustomPainter {
       'scale': scale,
     });
 
-    final ratio = world_svg.kWidth / world_svg.kHeight;
+    final ratio = map.width / map.height;
     var width = size.width;
     var height = width / ratio;
     if (height > size.height) {
@@ -200,12 +211,13 @@ class _Painter extends CustomPainter {
     canvas.save();
 
     canvas.translate((size.width - width) / 2, (size.height - height) / 2);
-    canvas.scale(width / world_svg.kWidth, height / world_svg.kHeight);
+    canvas.scale(width / map.width, height / map.height);
 
-    canvas.translate(
-      (world_svg.kWidth / 2 - focusPoint.dx * scale),
-      (world_svg.kHeight / 2 - focusPoint.dy * scale),
-    );
+    if (focusPoint != null)
+      canvas.translate(
+        (map.width / 2 - focusPoint.dx * scale),
+        (map.height / 2 - focusPoint.dy * scale),
+      );
     if (scale != 1) canvas.scale(scale);
 
     if (countries != null) {
@@ -220,7 +232,7 @@ class _Painter extends CustomPainter {
         _paintCountry(canvas, _paints[0], highlight.code);
       }
     } else {
-      final codes = world_svg.getAvailableCountryCodes();
+      final codes = map.getAvailableCountryCodes();
       var i = 0;
       for (final code in codes) {
         _paintCountry(canvas, _paints[0], code);
@@ -248,9 +260,17 @@ class _Painter extends CustomPainter {
       ((countries == null) != (other.countries == null)) ||
       focusPoint != other.focusPoint ||
       highlight != other.highlight ||
+      map != other.map ||
       order != other.order ||
       progress != other.progress ||
       scale != other.scale;
+
+  void _paintCountry(Canvas canvas, Paint paint, String code) {
+    final path = map.getCountryByCode(code)?.path;
+    if (path == null) return;
+
+    canvas.drawPath(path, paint);
+  }
 
   static final _legendValueFormatter = intl.NumberFormat.compact();
 
@@ -289,13 +309,6 @@ class _Painter extends CustomPainter {
       ..color = kColors[10]
       ..style = PaintingStyle.fill,
   ];
-
-  static void _paintCountry(Canvas canvas, Paint paint, String code) {
-    final path = world_svg.getCountryByCode(code)?.path;
-    if (path == null) return;
-
-    canvas.drawPath(path, paint);
-  }
 
   static void _paintLegend(
     Canvas canvas,

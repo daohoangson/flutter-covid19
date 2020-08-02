@@ -1,7 +1,3 @@
-import 'dart:math';
-
-import 'package:flutter/painting.dart';
-
 /*
 curl -s https://simplemaps.com/static/demos/resources/svg-library/svgs/world.svg \
   | php -r 'foreach(simplexml_load_string(file_get_contents("php://stdin"))->path as$p){echo json_encode(["id"=>(string)$p["id"],"d"=>(string)$p["d"]]),"\n";}' \
@@ -9,7 +5,7 @@ curl -s https://simplemaps.com/static/demos/resources/svg-library/svgs/world.svg
   | jq -s add \
   | pbcopy
 */
-const _kCountries = {
+const kPaths = {
   "AF":
       "m 1369.9,333.8 -5.4,0 -3.8,-0.5 -2.5,2.9 -2.1,0.7 -1.5,1.3 -2.6,-2.1 -1,-5.4 -1.6,-0.3 0,-2 -3.2,-1.5 -1.7,2.3 0.2,2.6 -0.6,0.9 -3.2,-0.1 -0.9,3 -2.1,-1.3 -3.3,2.1 -1.8,-0.8 -4.3,-1.4 -2.9,0 -1.6,-0.2 -2.9,-1.7 -0.3,2.3 -4.1,1.2 0.1,5.2 -2.5,2 -4,0.9 -0.4,3 -3.9,0.8 -5.9,-2.4 -0.5,8 -0.5,4.7 2.5,0.9 -1.6,3.5 2.7,5.1 1.1,4 4.3,1.1 1.1,4 -3.9,5.8 9.6,3.2 5.3,-0.9 3.3,0.8 0.9,-1.4 3.8,0.5 6.6,-2.6 -0.8,-5.4 2.3,-3.6 4,0 0.2,-1.7 4,-0.9 2.1,0.6 1.7,-1.8 -1.1,-3.8 1.5,-3.8 3,-1.6 -3,-4.2 5.1,0.2 0.9,-2.3 -0.8,-2.5 2,-2.7 -1.4,-3.2 -1.9,-2.8 2.4,-2.8 5.3,-1.3 5.8,-0.8 2.4,-1.2 2.8,-0.7 -1.4,-1.9 z",
   "AO":
@@ -428,87 +424,5 @@ const _kCountries = {
       "m 879.6,395.2 -0.2,-0.2 -0.7,0.5 -0.6,0 0.1,0.2 0.1,0.2 0.7,0.4 0.6,-1.1 z m 13.5,-2.1 0,-0.1 -0.1,0 -0.1,0.1 -1.3,-0.1 -0.2,0.6 -0.5,0.4 0,0.7 0.5,0.7 0.3,0.1 0.5,0.1 0.7,-0.4 0.2,-0.4 0.1,-0.8 -0.1,-0.4 0,-0.5 z m -9.7,0.8 0.5,-0.4 0,-0.2 -0.1,-0.3 -0.5,-0.3 -0.2,0 -0.2,0.2 -0.2,0.4 0.3,0.5 0.2,0.1 0.2,0 z m 4.7,-2.3 1.2,-1 0,-0.3 -1,0.1 -1.1,1 -0.3,0.1 -1,0.1 -0.5,0 -0.4,0.2 0.2,0.3 0.4,1 0.7,0.9 0.6,-0.2 0.3,-0.2 0.4,-0.6 0.5,-1.4 z m 11.6,1.3 1.5,-0.5 0.3,-1 0.3,-1.1 0,-0.7 -0.2,-0.3 -0.1,0 -0.4,0 -0.3,0.2 -0.1,0.6 -0.7,1.3 -0.5,1.2 -0.7,0.6 -0.7,0.2 0.1,0.1 0.7,0.1 0.8,-0.7 z m -19.7,-2 0.5,-0.5 0.1,-0.3 -0.1,-0.5 0.2,-0.2 -0.1,-0.4 -0.3,-0.4 -0.7,0 -0.4,0.6 0.6,1.2 0.1,0.5 0.1,0 z m 22.4,-2.7 0.9,-0.3 0.5,-0.3 0.1,-0.9 0.2,-0.3 -0.2,-0.3 -0.2,0.2 -0.2,0.4 -0.6,0.2 -0.8,0.4 -0.2,0.3 -0.2,0.9 0.4,0.1 0.3,-0.4 z"
 };
 
-const kHeight = 1001;
-const kWidth = 2000;
-
-final _countries = Map<String, SvgCountry>();
-
-class SvgCountry {
-  final Path path;
-  final Rect rect;
-
-  SvgCountry(this.path, this.rect);
-}
-
-Iterable<String> getAvailableCountryCodes() => _kCountries.keys;
-
-SvgCountry getCountryByCode(String code) {
-  if (!_countries.containsKey(code)) {
-    final path = Path();
-    if (_kCountries.containsKey(code)) {
-      final parts = _kCountries[code].split(' ');
-      final i = parts.iterator;
-
-      var pathCount = 0;
-      List<Offset> points;
-      double xMin, xMax, yMin, yMax;
-      Rect largest;
-
-      while (i.moveNext()) {
-        final part = i.current;
-        switch (part) {
-          case 'M':
-          case 'm':
-            if (i.moveNext()) {
-              final offset = ((points?.isNotEmpty == true && part == 'm')
-                      ? points.last
-                      : Offset(0, 0)) +
-                  _parseOffset(i.current);
-              points = [offset];
-              xMin = xMax = offset.dx;
-              yMin = yMax = offset.dy;
-            }
-            break;
-          case 'l':
-            break;
-          case 'z':
-            if (pathCount > 0) {
-              final area = (xMax - xMin) * (yMax - yMin);
-              if (area < 1000) {
-                // skip drawing path if the area is too small (practially invisible)
-                // without the check, we were drawing up to 1.5k polygons
-                // currently we are only drawing <300 of those
-                continue;
-              }
-            }
-
-            final rect = Rect.fromLTRB(xMin, yMin, xMax, yMax);
-            if (largest == null ||
-                rect.width * rect.height > largest.width * largest.height) {
-              largest = rect;
-            }
-
-            path.addPolygon(points, true);
-            pathCount++;
-            break;
-          default:
-            final offset = points.last + _parseOffset(part);
-            points.add(offset);
-            xMin = min(xMin, offset.dx);
-            xMax = max(xMax, offset.dx);
-            yMin = min(yMin, offset.dy);
-            yMax = max(yMax, offset.dy);
-        }
-      }
-
-      _countries[code] = SvgCountry(path, largest);
-    }
-  }
-
-  return _countries[code];
-}
-
-Offset _parseOffset(String str) {
-  final l = str.split(',');
-  return Offset(double.parse(l[0]), double.parse(l[1]));
-}
+const kHeight = 1001.0;
+const kWidth = 2000.0;

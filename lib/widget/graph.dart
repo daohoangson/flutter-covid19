@@ -3,8 +3,8 @@ import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui';
 
-import 'package:covid19/api/api.dart';
-import 'package:covid19/api/sort.dart';
+import 'package:covid19/data/api.dart';
+import 'package:covid19/data/sort.dart';
 import 'package:flutter/material.dart';
 
 class GraphWidget extends StatelessWidget {

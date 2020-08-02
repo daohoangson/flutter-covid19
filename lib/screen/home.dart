@@ -1,4 +1,4 @@
-import 'package:covid19/api/api.dart';
+import 'package:covid19/data/api.dart';
 import 'package:covid19/layout.dart';
 import 'package:covid19/screen/settings.dart';
 import 'package:covid19/search.dart';
@@ -47,7 +47,7 @@ class _ProgressIndicator extends StatelessWidget {
       ? const Center(child: CircularProgressIndicator())
       : Center(
           child: AspectRatio(
-          aspectRatio: kMapPreferredRatio,
+          aspectRatio: 16 / 9,
           child: MapProgressIndicator(value: value),
         ));
 }
@@ -60,7 +60,7 @@ class _Portrait extends StatelessWidget {
             children: [
               BigNumbersPlaceholder(),
               AspectRatio(
-                aspectRatio: kMapPreferredRatio,
+                aspectRatio: 16 / 9,
                 child: MapWidget(),
               ),
               Expanded(child: TableWidget()),

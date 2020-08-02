@@ -1,5 +1,5 @@
-import 'package:covid19/api/api.dart';
-import 'package:covid19/api/sort.dart';
+import 'package:covid19/data/api.dart';
+import 'package:covid19/data/sort.dart';
 import 'package:covid19/app_state.dart';
 import 'package:covid19/layout.dart';
 import 'package:covid19/widget/flag.dart';

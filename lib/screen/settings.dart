@@ -13,6 +13,7 @@ class SettingsScreen extends StatelessWidget {
         body: ListView(
           children: [
             _ShowPerformanceOverlay(),
+            _UseHqMap(),
           ],
         ),
       );
@@ -37,5 +38,17 @@ class _ShowPerformanceOverlay extends StatelessWidget {
           value: showPerformanceOverlay,
         ),
         selector: (_, app) => app.showPerformanceOverlay,
+      );
+}
+
+class _UseHqMap extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => Selector<AppState, bool>(
+        builder: (context, useHqMap, __) => CheckboxListTile(
+          onChanged: (_) => AppState.of(context).useHqMap = !useHqMap,
+          title: Text('Use HQ map'),
+          value: useHqMap,
+        ),
+        selector: (_, app) => app.useHqMap,
       );
 }

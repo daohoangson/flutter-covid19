@@ -1,4 +1,4 @@
-import 'package:covid19/api/api.dart';
+import 'package:covid19/data/api.dart';
 import 'package:covid19/app_state.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';

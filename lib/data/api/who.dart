@@ -1,6 +1,6 @@
 import 'dart:isolate';
 
-import 'package:covid19/api/api.dart';
+import 'package:covid19/data/api.dart';
 import 'package:csv/csv.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';

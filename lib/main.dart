@@ -1,5 +1,5 @@
-import 'package:covid19/api/api.dart';
-import 'package:covid19/api/who.dart';
+import 'package:covid19/data/api.dart';
+import 'package:covid19/data/api/who.dart';
 import 'package:covid19/app_state.dart';
 import 'package:covid19/screen/home.dart';
 import 'package:flutter/material.dart';
