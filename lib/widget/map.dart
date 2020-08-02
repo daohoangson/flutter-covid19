@@ -291,7 +291,9 @@ class _Painter extends CustomPainter {
   ];
 
   static void _paintCountry(Canvas canvas, Paint paint, String code) {
-    final path = world_svg.getCountryByCode(code).path;
+    final path = world_svg.getCountryByCode(code)?.path;
+    if (path == null) return;
+
     canvas.drawPath(path, paint);
   }
 
