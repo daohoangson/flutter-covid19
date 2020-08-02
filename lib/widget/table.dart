@@ -185,7 +185,6 @@ class _ListState extends State<_ListView> {
       _NumberBox(
         child: _NumberText(
           data ?? _formatNumber(sop.asc.measure(country.latest)),
-          color: kColors[sop.asc.calculateSeriousness(record: country.latest)],
         ),
       );
 
@@ -214,12 +213,10 @@ class _NumberBox extends StatelessWidget {
 }
 
 class _NumberText extends StatelessWidget {
-  final Color color;
   final String data;
 
   const _NumberText(
     this.data, {
-    this.color,
     Key key,
   }) : super(key: key);
 
@@ -229,7 +226,7 @@ class _NumberText extends StatelessWidget {
           data,
           maxLines: 1,
           overflow: TextOverflow.fade,
-          style: Theme.of(context).textTheme.caption.copyWith(color: color),
+          style: Theme.of(context).textTheme.caption,
         ),
         padding: const EdgeInsets.all(8),
       );
