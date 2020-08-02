@@ -63,7 +63,7 @@ class AppState extends ChangeNotifier {
   }
 
   static const kUseHqMapPrefKey = 'app_state.useHqMap';
-  bool _useHqMap = false;
+  bool _useHqMap = true;
   bool get useHqMap => _useHqMap;
   set useHqMap(bool v) {
     if (v == _useHqMap) return;
