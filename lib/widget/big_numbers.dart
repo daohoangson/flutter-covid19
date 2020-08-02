@@ -18,12 +18,11 @@ class BigNumbersWidget extends StatelessWidget {
       bc != null ? _build(context, bc) : LayoutBuilder(builder: _build);
 
   static Widget _build(BuildContext _, BoxConstraints bc) =>
-      Consumer2<Api, AppState>(
-        builder: (_, api, app, __) {
-          final country = app.highlight != null
-              ? api.countries
-                  ?.where((country) => country == app.highlight)
-                  ?.first
+      Selector<AppState, ApiCountry>(
+        builder: (context, highlight, _) {
+          final api = Provider.of<Api>(context);
+          final country = highlight != null
+              ? api.countries?.where((country) => country == highlight)?.first
               : null;
           final layout = BigNumbersPlaceholder._layout(bc);
 
@@ -31,6 +30,7 @@ class BigNumbersWidget extends StatelessWidget {
               ? _buildCountry(country, layout)
               : _buildWorld(api.worldLatest, layout);
         },
+        selector: (_, app) => app.highlight,
       );
 
   static Widget _buildCountry(ApiCountry country, Layout layout) => Row(
