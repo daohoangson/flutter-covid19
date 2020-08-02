@@ -564,10 +564,10 @@ SvgCountry getCountryByCode(String code) {
           case 'z':
             if (pathCount > 0) {
               final area = (xMax - xMin) * (yMax - yMin);
-              if (area < 50) {
+              if (area < 1000) {
                 // skip drawing path if the area is too small (practially invisible)
-                // without the check, we were drawing up to 1.5k paths
-                // currently we are only drawing 300 of those
+                // without the check, we were drawing up to 1.5k polygons
+                // currently we are only drawing <300 of those
                 continue;
               }
             }
