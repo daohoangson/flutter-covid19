@@ -12,6 +12,12 @@ class AppState extends ChangeNotifier {
         final orderParsed = SortOrder.fromString(orderStr);
         if (orderParsed != null) order = orderParsed;
       }
+
+      final showPerformanceOverlayOrNull =
+          p.getBool(kShowPerformanceOverlayPrefKey);
+      if (showPerformanceOverlayOrNull != null) {
+        showPerformanceOverlay = showPerformanceOverlayOrNull;
+      }
     });
   }
 
@@ -35,6 +41,19 @@ class AppState extends ChangeNotifier {
 
     SharedPreferences.getInstance()
         .then((p) => p.setString(kOrderPrefKey, v.toString()))
+        .then((_) => notifyListeners());
+  }
+
+  static const kShowPerformanceOverlayPrefKey =
+      'app_state.showPerformanceOverlay';
+  bool _showPerformanceOverlay = false;
+  bool get showPerformanceOverlay => _showPerformanceOverlay;
+  set showPerformanceOverlay(bool v) {
+    if (v == _showPerformanceOverlay) return;
+    _showPerformanceOverlay = v;
+
+    SharedPreferences.getInstance()
+        .then((p) => p.setBool(kShowPerformanceOverlayPrefKey, v))
         .then((_) => notifyListeners());
   }
 

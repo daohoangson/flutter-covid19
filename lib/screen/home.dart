@@ -1,5 +1,6 @@
 import 'package:covid19/api/api.dart';
 import 'package:covid19/layout.dart';
+import 'package:covid19/screen/settings.dart';
 import 'package:covid19/search.dart';
 import 'package:covid19/widget/big_numbers.dart';
 import 'package:covid19/widget/map.dart';
@@ -19,7 +20,10 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       appBar: !kIsWeb
           ? AppBar(
-              actions: [CountrySearchButton.icon()],
+              actions: [
+                CountrySearchButton.icon(),
+                SettingsScreen.icon(),
+              ],
               title: Text('Covid-19 numbers worldwide'),
             )
           : null,
