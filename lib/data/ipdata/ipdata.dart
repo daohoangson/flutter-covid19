@@ -9,7 +9,7 @@ class Ipdata extends ChangeNotifier {
       Uri.https(
         'api.ipdata.co',
         '',
-        {'api-key': kIpDataApiKey},
+        {'api-key': kApiKey},
       ),
       options: Options(responseType: ResponseType.json),
     )
