@@ -31,6 +31,8 @@ class MapProgressIndicator extends StatelessWidget {
 }
 
 class MapWidget extends StatelessWidget {
+  MapWidget({Key key}) : super(key: key);
+
   @override
   Widget build(BuildContext _) => Consumer2<Api, AppState>(
         builder: (context, api, app, _) => Padding(
