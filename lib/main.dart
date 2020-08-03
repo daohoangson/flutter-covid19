@@ -6,13 +6,19 @@ import 'package:covid19/screen/settings.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-void main() => runApp(MultiProvider(
-      child: MyApp(),
-      providers: [
-        ChangeNotifierProvider<Api>(create: (_) => WhoApi()),
-        ChangeNotifierProvider(create: (_) => AppState()),
-      ],
-    ));
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final app = AppState();
+  await app.loadPrefs();
+
+  runApp(MultiProvider(
+    child: MyApp(),
+    providers: [
+      ChangeNotifierProvider<Api>(create: (_) => WhoApi()),
+      ChangeNotifierProvider.value(value: app),
+    ],
+  ));
+}
 
 class MyApp extends StatelessWidget {
   @override
