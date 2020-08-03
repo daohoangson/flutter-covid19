@@ -6,27 +6,6 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AppState extends ChangeNotifier {
-  AppState() {
-    SharedPreferences.getInstance().then((p) {
-      final orderStr = p.getString(kOrderPrefKey);
-      if (orderStr != null) {
-        final orderParsed = SortOrder.fromString(orderStr);
-        if (orderParsed != null) order = orderParsed;
-      }
-
-      final showPerformanceOverlayOrNull =
-          p.getBool(kShowPerformanceOverlayPrefKey);
-      if (showPerformanceOverlayOrNull != null) {
-        showPerformanceOverlay = showPerformanceOverlayOrNull;
-      }
-
-      final useHqMapOrNull = p.getBool(kUseHqMapPrefKey);
-      if (useHqMapOrNull != null) {
-        useHqMap = useHqMapOrNull;
-      }
-    });
-  }
-
   ApiCountry _highlight;
   ApiCountry get highlight => _highlight;
   Highlighter _highlighter;
@@ -82,6 +61,26 @@ class AppState extends ChangeNotifier {
     SharedPreferences.getInstance()
         .then((p) => p.setBool(kUseHqMapPrefKey, v))
         .then((_) => notifyListeners());
+  }
+
+  Future<void> loadPrefs() async {
+    final p = await SharedPreferences.getInstance();
+    final orderStr = p.getString(kOrderPrefKey);
+    if (orderStr != null) {
+      final orderParsed = SortOrder.fromString(orderStr);
+      if (orderParsed != null) order = orderParsed;
+    }
+
+    final showPerformanceOverlayOrNull =
+        p.getBool(kShowPerformanceOverlayPrefKey);
+    if (showPerformanceOverlayOrNull != null) {
+      showPerformanceOverlay = showPerformanceOverlayOrNull;
+    }
+
+    final useHqMapOrNull = p.getBool(kUseHqMapPrefKey);
+    if (useHqMapOrNull != null) {
+      useHqMap = useHqMapOrNull;
+    }
   }
 
   static AppState of(BuildContext context) =>
