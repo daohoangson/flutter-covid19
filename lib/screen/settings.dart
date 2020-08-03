@@ -42,6 +42,7 @@ class SettingsScreen extends StatelessWidget {
             _Heading('About'),
             _AboutAuthor(),
             _AboutVersion(),
+            _AboutRepository(),
           ],
         ),
       );
@@ -61,7 +62,17 @@ class _AboutAuthor extends StatelessWidget {
         title: Text('Developer'),
         subtitle: Text('dao@hoangson.vn'),
         onTap: () => launch('https://hoangson.vn/?utm_source=covid19'
-            '&utm_medium=app&utm_campaign=author'),
+            '&utm_medium=about&utm_campaign=author'),
+      );
+}
+
+class _AboutRepository extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => ListTile(
+        title: Text('Repository'),
+        subtitle: Text('github.com (GNU GPLv3)'),
+        onTap: () => launch('https://github.com/daohoangson/flutter-covid19/'
+            '?utm_source=covid19&utm_medium=about&utm_campaign=repository'),
       );
 }
 
