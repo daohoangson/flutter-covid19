@@ -1,6 +1,6 @@
 import 'package:covid19/data/api.dart';
 import 'package:covid19/app_state.dart';
-import 'package:covid19/data/ipapi/ipapi.dart';
+import 'package:covid19/data/ipdata/ipdata.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -127,25 +127,34 @@ class _IpBasedListTile extends StatelessWidget {
   const _IpBasedListTile({Key key, @required this.onTap}) : super(key: key);
 
   @override
-  Widget build(BuildContext _) => Selector<AppState, IpApi>(
-        builder: (context, ipapi, _) => ListTile(
-          onTap: ipapi.countryCode != null
+  Widget build(BuildContext _) => Selector<AppState, Ipdata>(
+        builder: (context, ip, _) => ListTile(
+          onTap: ip.countryCode != null
               ? () {
                   final api = Provider.of<Api>(context, listen: false);
                   for (final country in api.countries) {
-                    if (country.code == ipapi.countryCode) {
+                    if (country.code == ip.countryCode) {
                       onTap(context, country);
                     }
                   }
                 }
               : null,
-          subtitle: ipapi.isLoading
+          subtitle: ip.isLoading
               ? Text('Resolving your IP address...')
-              : Text(ipapi.ip ?? 'N/A'),
-          title: ipapi.title != null ? Text(ipapi.title) : null,
-          trailing: ipapi.countryCode != null ? Icon(Icons.location_on) : null,
+              : ip.ip != null
+                  ? Text(ip.ip)
+                  : ip.error?.isNotEmpty == true ? Text(ip.error) : null,
+          title: ip.isLoading
+              ? null
+              : ip.title != null
+                  ? Text(ip.title)
+                  : Text(
+                      'We were unable to resolve your IP',
+                      style: TextStyle(fontStyle: FontStyle.italic),
+                    ),
+          trailing: ip.countryCode != null ? Icon(Icons.location_on) : null,
         ),
-        selector: (_, app) => app.ipapi,
+        selector: (_, app) => app.ipdata,
         shouldRebuild: (_, __) => true,
       );
 }

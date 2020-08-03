@@ -1,5 +1,5 @@
 import 'package:covid19/data/api.dart';
-import 'package:covid19/data/ipapi/ipapi.dart';
+import 'package:covid19/data/ipdata/ipdata.dart';
 import 'package:covid19/data/sort.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -38,13 +38,13 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  IpApi _ipapi;
-  IpApi get ipapi {
-    if (_ipapi == null) {
-      _ipapi = IpApi();
-      _ipapi.addListener(notifyListeners);
+  Ipdata _ipdata;
+  Ipdata get ipdata {
+    if (_ipdata == null) {
+      _ipdata = Ipdata();
+      _ipdata.addListener(notifyListeners);
     }
-    return _ipapi;
+    return _ipdata;
   }
 
   static const kOrderPrefKey = 'app_state.order';

@@ -1,18 +1,16 @@
-import 'package:covid19/data/ipapi/api_key.dart';
+import 'package:covid19/data/ipdata/api_key.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
-class IpApi extends ChangeNotifier {
-  IpApi() {
-    // TODO: use HTTPS
-    final uri = Uri.http(
-      'api.ipapi.com',
-      'api/check',
-      {'access_key': kIpApiKey},
-    );
+class Ipdata extends ChangeNotifier {
+  Ipdata() {
     Dio()
         .getUri<Map>(
-      uri,
+      Uri.https(
+        'api.ipdata.co',
+        '',
+        {'api-key': kIpDataApiKey},
+      ),
       options: Options(responseType: ResponseType.json),
     )
         .then(
@@ -24,7 +22,7 @@ class IpApi extends ChangeNotifier {
         if (map.containsKey('city') && map.containsKey('country_name'))
           _title = "${map['city']}, ${map['country_name']}";
       },
-      onError: (reason) => print(reason),
+      onError: (reason) => _error = "$reason",
     ).whenComplete(() {
       _isLoading = false;
       notifyListeners();
@@ -33,6 +31,9 @@ class IpApi extends ChangeNotifier {
 
   String _countryCode;
   String get countryCode => _countryCode;
+
+  String _error;
+  String get error => _error;
 
   bool _isLoading = true;
   bool get isLoading => _isLoading;
