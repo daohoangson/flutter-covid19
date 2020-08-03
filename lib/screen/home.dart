@@ -49,14 +49,14 @@ class _ProgressIndicator extends StatelessWidget {
   const _ProgressIndicator({Key key, this.value}) : super(key: key);
 
   String get loadingText {
-    if (value != null) {
+    if (value > 0) {
       if (value < .5) return 'Loading.\u{00a0}\u{00a0}';
       if (value < .6) return 'Loading..\u{00a0}';
       if (value < .7) return 'Loading...';
       if (value < .8) return 'Loading.\u{00a0}\u{00a0}';
       if (value < .85) return 'Loading..\u{00a0}';
       if (value < .9) return 'Loading...';
-      if (value < 1.0) return 'Almost done...';
+      return 'Almost done...';
     }
 
     return 'Loading...';
