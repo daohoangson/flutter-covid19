@@ -35,6 +35,11 @@ class SettingsScreen extends StatelessWidget {
               url: 'https://simplemaps.com/resources/svg-world',
             ),
             _Reference(
+              title: 'Flag icon set',
+              subtitle: 'gosquared.com',
+              url: 'https://github.com/gosquared/flags',
+            ),
+            _Reference(
               title: 'IP lookup',
               subtitle: 'ipdata.co',
               url: 'https://ipdata.co',
