@@ -1,95 +1,155 @@
+import 'dart:developer';
 import 'dart:math';
+import 'dart:typed_data';
+import 'dart:ui';
 
-import 'package:covid19/api/api.dart';
+import 'package:covid19/data/api.dart';
+import 'package:covid19/data/sort.dart';
 import 'package:flutter/material.dart';
 
 class GraphWidget extends StatelessWidget {
-  final Color color;
-  final String id;
-  final int Function(ApiRecord) measureFn;
+  final ApiCountry country;
   final GraphMode mode;
-  final Iterable<ApiRecord> records;
+  final SortOrder sort;
 
   const GraphWidget({
-    @required this.color,
-    @required this.id,
+    @required this.country,
     Key key,
-    @required this.measureFn,
     @required this.mode,
-    @required this.records,
+    @required this.sort,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) => CustomPaint(
         painter: _Painter(
-          color: color,
-          id: id,
-          measureFn: measureFn,
+          country: country,
           mode: mode,
-          records: records,
+          sort: sort,
         ),
       );
 }
 
 class _Painter extends CustomPainter {
-  final Color color;
-  final String id;
-  final int Function(ApiRecord) measureFn;
+  final ApiCountry country;
   final GraphMode mode;
-  final Iterable<ApiRecord> records;
+  final SortOrder sort;
+
+  var _maxX = 0.0;
+  var _maxY = 0.0;
+  List<Rect> _rects;
+  List<Offset> _points;
 
   _Painter({
-    @required this.color,
-    @required this.id,
-    @required this.measureFn,
+    @required this.country,
     @required this.mode,
-    @required this.records,
+    @required this.sort,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final x0 = DateTime(2020, 2, 24);
-    final now = DateTime.now();
-    final xUpper = DateTime(now.year, now.month, now.day).difference(x0).inDays;
+    Timeline.startSync('Covid-19 graph', arguments: {
+      'country': country.code,
+      'mode': mode == GraphMode.bar ? 'bar' : 'line',
+      'sort': sort.toString(),
+    });
 
-    var yUpper = 0;
-    final values = <int, int>{};
-    for (final record in records) {
-      final x = record.date.difference(x0).inDays;
-      final y = measureFn(record);
+    _prePaint();
 
-      values[x] = y;
-      yUpper = max(yUpper, y);
+    final scaleX = _maxX > 0 ? size.width / _maxX : 1;
+    final scaleY = _maxY > 0 ? size.height / _maxY : 1;
+    switch (mode) {
+      case GraphMode.bar:
+        canvas.save();
+
+        // with a single transformation, we are doing three things:
+        // - vertical flip
+        // - scaling
+        // - and finally a downward move (because of the flip)
+        canvas.transform(Float64List.fromList([
+          scaleX, // scaling
+          0,
+          0,
+          0,
+          0,
+          -scaleY, // flip and scaling
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          size.height, // downward move
+          0,
+          1
+        ]));
+
+        for (final rect in _rects) {
+          final value = rect.bottom.toInt();
+          final paint = _paints[sort.calculateSeriousness(value: value)];
+          canvas.drawRect(rect, paint);
+        }
+
+        canvas.restore();
+        break;
+      case GraphMode.line:
+        canvas.drawPoints(
+          PointMode.polygon,
+          _points
+              .map((p) => Offset(p.dx * scaleX, size.height - p.dy * scaleY))
+              .toList(growable: false),
+          _paints[sort.calculateSeriousness(record: country.latest)],
+        );
+        break;
     }
-    if (yUpper == 0) return;
 
-    final paint = Paint()
-      ..color = color.withOpacity(.75)
-      ..strokeWidth = 2;
-    final xScale = size.width / xUpper;
-    final yScale = size.height / yUpper;
-
-    var prev = Offset(0, size.height);
-    for (var x = 0; x < xUpper; x++) {
-      final y = values[x] ?? 0;
-      final offset = Offset(x * xScale, size.height - y * yScale);
-
-      switch (mode) {
-        case GraphMode.bar:
-          canvas.drawRect(
-              Rect.fromLTRB(prev.dx, offset.dy, offset.dx, size.height), paint);
-          break;
-        case GraphMode.line:
-          canvas.drawLine(prev, offset, paint);
-          break;
-      }
-
-      prev = offset;
-    }
+    Timeline.finishSync();
   }
 
   @override
-  bool shouldRepaint(_Painter other) => id != other.id || mode != other.mode;
+  bool shouldRepaint(_Painter other) =>
+      country.code != other.country.code ||
+      mode != other.mode ||
+      sort != other.sort;
+
+  void _prePaint() {
+    switch (mode) {
+      case GraphMode.bar:
+        if (_rects != null) return;
+        _rects = [];
+        break;
+      case GraphMode.line:
+        if (_points != null) return;
+        _points = [Offset(0, 0)];
+        break;
+    }
+
+    DateTime x0;
+    for (final record in country.records) {
+      x0 ??= record.date;
+      final x = record.date.difference(x0).inDays.toDouble();
+      if (x < 0) continue;
+
+      final y = sort.measure(record).toDouble();
+      switch (mode) {
+        case GraphMode.bar:
+          _rects.add(Rect.fromLTRB(x - 1, 0, x, y));
+          break;
+        case GraphMode.line:
+          _points.add(Offset(x, y));
+          break;
+      }
+
+      _maxX = max(_maxX, x);
+      _maxY = max(_maxY, y);
+    }
+  }
+
+  static final _paints = kColors
+      .map((color) => Paint()
+        ..color = color.withOpacity(.75)
+        ..strokeWidth = 2)
+      .toList(growable: false);
 }
 
 enum GraphMode {

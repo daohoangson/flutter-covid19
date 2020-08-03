@@ -1,5 +1,5 @@
-import 'package:covid19/api/api.dart';
-import 'package:covid19/api/sort.dart';
+import 'package:covid19/data/api.dart';
+import 'package:covid19/data/sort.dart';
 import 'package:covid19/app_state.dart';
 import 'package:covid19/layout.dart';
 import 'package:covid19/widget/flag.dart';
@@ -18,12 +18,11 @@ class BigNumbersWidget extends StatelessWidget {
       bc != null ? _build(context, bc) : LayoutBuilder(builder: _build);
 
   static Widget _build(BuildContext _, BoxConstraints bc) =>
-      Consumer2<Api, AppState>(
-        builder: (_, api, app, __) {
-          final country = app.highlight != null
-              ? api.countries
-                  ?.where((country) => country == app.highlight)
-                  ?.first
+      Selector<AppState, ApiCountry>(
+        builder: (context, highlight, _) {
+          final api = Provider.of<Api>(context);
+          final country = highlight != null
+              ? api.countries?.where((country) => country == highlight)?.first
               : null;
           final layout = BigNumbersPlaceholder._layout(bc);
 
@@ -31,6 +30,7 @@ class BigNumbersWidget extends StatelessWidget {
               ? _buildCountry(country, layout)
               : _buildWorld(api.worldLatest, layout);
         },
+        selector: (_, app) => app.highlight,
       );
 
   static Widget _buildCountry(ApiCountry country, Layout layout) => Row(
@@ -79,20 +79,8 @@ class BigNumbersWidget extends StatelessWidget {
         ],
       );
 
-  static Widget _buildGraph(
-      ApiCountry country, GraphMode mode, SortOrderPair sop) {
-    final record = country.latest;
-    final sort = sop.asc;
-    final color = kColors[sort.calculateSeriousness(record)];
-
-    return GraphWidget(
-      color: color,
-      id: "${country.code}-$sort",
-      measureFn: sort.measure,
-      mode: mode,
-      records: country.records,
-    );
-  }
+  static Widget _buildGraph(ApiCountry c, GraphMode m, SortOrderPair s) =>
+      GraphWidget(country: c, mode: m, sort: s.asc);
 
   static Widget _buildWorld(ApiRecord worldLatest, Layout layout) => Row(
         children: [

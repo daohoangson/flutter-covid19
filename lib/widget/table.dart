@@ -1,5 +1,5 @@
-import 'package:covid19/api/api.dart';
-import 'package:covid19/api/sort.dart';
+import 'package:covid19/data/api.dart';
+import 'package:covid19/data/sort.dart';
 import 'package:covid19/app_state.dart';
 import 'package:covid19/layout.dart';
 import 'package:covid19/widget/toggler.dart';
@@ -118,9 +118,7 @@ class _ListState extends State<_ListView> {
   @override
   void initState() {
     super.initState();
-
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => _makeSureHighlightIsVisible(false));
+    _makeSureHighlightIsVisible(false);
   }
 
   @override
@@ -187,7 +185,6 @@ class _ListState extends State<_ListView> {
       _NumberBox(
         child: _NumberText(
           data ?? _formatNumber(sop.asc.measure(country.latest)),
-          color: kColors[sop.asc.calculateSeriousness(country.latest)],
         ),
       );
 
@@ -197,15 +194,10 @@ class _ListState extends State<_ListView> {
             : 0)
         .clamp(0, widget.countries.length - 1);
 
-    if (animate) {
-      _controller.scrollTo(
-        index: index,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.ease,
-      );
-    } else {
-      _controller.jumpTo(index: index);
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) => animate
+        ? _controller.scrollTo(
+            index: index, duration: const Duration(milliseconds: 500))
+        : _controller.jumpTo(index: index));
   }
 }
 
@@ -221,12 +213,10 @@ class _NumberBox extends StatelessWidget {
 }
 
 class _NumberText extends StatelessWidget {
-  final Color color;
   final String data;
 
   const _NumberText(
     this.data, {
-    this.color,
     Key key,
   }) : super(key: key);
 
@@ -236,7 +226,7 @@ class _NumberText extends StatelessWidget {
           data,
           maxLines: 1,
           overflow: TextOverflow.fade,
-          style: Theme.of(context).textTheme.caption.copyWith(color: color),
+          style: Theme.of(context).textTheme.caption,
         ),
         padding: const EdgeInsets.all(8),
       );
