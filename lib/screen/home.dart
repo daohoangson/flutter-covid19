@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:covid19/data/api.dart';
 import 'package:covid19/layout.dart';
 import 'package:covid19/screen/settings.dart';

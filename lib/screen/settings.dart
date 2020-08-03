@@ -1,7 +1,9 @@
 import 'package:covid19/app_state.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:package_info/package_info.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SettingsScreen extends StatelessWidget {
   static const kRouteName = '/settings';
@@ -13,8 +15,33 @@ class SettingsScreen extends StatelessWidget {
         ),
         body: ListView(
           children: [
-            _ShowPerformanceOverlay(),
-            _UseHqMap(),
+            _Heading('Preferences'),
+            _PrefShowPerformanceOverlay(),
+            _PrefUseHqMap(),
+            _Heading('References'),
+            _Reference(
+              title: 'Cases & deaths data',
+              subtitle: 'Official World Health Organization website',
+              url: 'https://covid19.who.int',
+            ),
+            _Reference(
+              title: 'High quality map',
+              subtitle: 'mapsvg.com',
+              url: 'https://mapsvg.com/maps/world',
+            ),
+            _Reference(
+              title: 'Standard quality map',
+              subtitle: 'simplemaps.com',
+              url: 'https://simplemaps.com/resources/svg-world',
+            ),
+            _Reference(
+              title: 'IP lookup',
+              subtitle: 'ipdata.co',
+              url: 'https://ipdata.co',
+            ),
+            _Heading('About'),
+            _AboutAuthor(),
+            _AboutVersion(),
           ],
         ),
       );
@@ -23,11 +50,49 @@ class SettingsScreen extends StatelessWidget {
         builder: (context) => IconButton(
           icon: Icon(Icons.settings),
           onPressed: () => Navigator.of(context).pushNamed(kRouteName),
+          tooltip: 'Settings',
         ),
       );
 }
 
-class _ShowPerformanceOverlay extends StatelessWidget {
+class _AboutAuthor extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => ListTile(
+        title: Text('Developer'),
+        subtitle: Text('dao@hoangson.vn'),
+        onTap: () => launch('https://hoangson.vn/?utm_source=covid19'
+            '&utm_medium=app&utm_campaign=author'),
+      );
+}
+
+class _AboutVersion extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => FutureProvider(
+        child: Consumer<PackageInfo>(
+          builder: (_, info, __) => ListTile(
+            title: Text('Version'),
+            subtitle: Text('${info?.version} (build no. ${info?.buildNumber})'),
+          ),
+        ),
+        create: (_) => PackageInfo.fromPlatform(),
+      );
+}
+
+class _Heading extends StatelessWidget {
+  final String title;
+
+  const _Heading(this.title, {Key key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+        title: Text(
+          title,
+          style: Theme.of(context).textTheme.headline6,
+        ),
+      );
+}
+
+class _PrefShowPerformanceOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext _) => Selector<AppState, bool>(
         builder: (context, showPerformanceOverlay, __) => CheckboxListTile(
@@ -47,20 +112,45 @@ class _ShowPerformanceOverlay extends StatelessWidget {
                 !showPerformanceOverlay;
           },
           title: Text('Show performance overlay'),
+          subtitle: Text("Toggle Flutter's performance overlay for kicks."),
           value: showPerformanceOverlay,
         ),
         selector: (_, app) => app.showPerformanceOverlay,
       );
 }
 
-class _UseHqMap extends StatelessWidget {
+class _PrefUseHqMap extends StatelessWidget {
   @override
   Widget build(BuildContext _) => Selector<AppState, bool>(
         builder: (context, useHqMap, __) => CheckboxListTile(
           onChanged: (_) => AppState.of(context).useHqMap = !useHqMap,
           title: Text('Use HQ map'),
+          subtitle: Text(
+            'This app includes two maps with different level of details. '
+            'The high quality map has roughly five times as many polygons as the standard one.',
+          ),
           value: useHqMap,
         ),
         selector: (_, app) => app.useHqMap,
+      );
+}
+
+class _Reference extends StatelessWidget {
+  final String subtitle;
+  final String title;
+  final String url;
+
+  const _Reference({
+    Key key,
+    @required this.subtitle,
+    @required this.title,
+    this.url,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+        onTap: url != null ? () => launch(url) : null,
+        title: Text(title),
+        subtitle: Text(subtitle),
       );
 }
