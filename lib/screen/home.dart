@@ -15,26 +15,26 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
-    final child = screenSize.width < screenSize.height
-        ? _Portrait()
-        : _Landscape(screenSize: screenSize);
 
-    return Scaffold(
-      appBar: !kIsWeb
-          ? AppBar(
-              actions: [
-                CountrySearchButton.icon(),
-                SettingsScreen.icon(),
-              ],
-              title: Text('Covid-19 numbers worldwide'),
-            )
-          : null,
-      body: Consumer<Api>(
-        builder: (_, api, child) =>
-            api.hasData ? child : _ProgressIndicator(value: api.progress),
-        child: child,
+    return Consumer<Api>(
+      builder: (_, api, child) => api.hasData
+          ? child
+          : Scaffold(body: _ProgressIndicator(value: api.progress)),
+      child: Scaffold(
+        appBar: !kIsWeb
+            ? AppBar(
+                actions: [
+                  CountrySearchButton.icon(),
+                  SettingsScreen.icon(),
+                ],
+                title: Text('Covid-19'),
+              )
+            : null,
+        body: screenSize.width < screenSize.height
+            ? _Portrait()
+            : _Landscape(screenSize: screenSize),
+        floatingActionButton: kIsWeb ? CountrySearchButton.fab() : null,
       ),
-      floatingActionButton: kIsWeb ? CountrySearchButton.fab() : null,
     );
   }
 }
