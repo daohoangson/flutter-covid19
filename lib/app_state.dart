@@ -1,4 +1,5 @@
 import 'package:covid19/data/api.dart';
+import 'package:covid19/data/ipapi/ipapi.dart';
 import 'package:covid19/data/sort.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -35,6 +36,15 @@ class AppState extends ChangeNotifier {
     _highlight = country;
     _highlighter = highlighter;
     notifyListeners();
+  }
+
+  IpApi _ipapi;
+  IpApi get ipapi {
+    if (_ipapi == null) {
+      _ipapi = IpApi();
+      _ipapi.addListener(notifyListeners);
+    }
+    return _ipapi;
   }
 
   static const kOrderPrefKey = 'app_state.order';

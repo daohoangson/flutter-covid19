@@ -1,5 +1,6 @@
 import 'package:covid19/data/api.dart';
 import 'package:covid19/app_state.dart';
+import 'package:covid19/data/ipapi/ipapi.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -91,25 +92,25 @@ class _CountrySearchDelegate extends SearchDelegate<ApiCountry> {
   @override
   Widget buildSuggestions(BuildContext context) => query.isEmpty
       ? FutureBuilder<List<String>>(
-          builder: (_, snapshot) => snapshot.hasData
-              ? ListView.builder(
-                  itemBuilder: (_, index) {
-                    final recent = snapshot.data[index];
-                    return ListTile(
-                      title: Text(recent),
-                      onTap: () async {
-                        for (final country in searchIndex.values) {
-                          if (country.name == recent) {
-                            onTap(context, country);
-                            return;
-                          }
-                        }
-                      },
-                    );
-                  },
-                  itemCount: snapshot.data.length,
-                )
-              : const SizedBox.shrink(),
+          builder: (_, snapshot) => ListView.builder(
+            itemBuilder: (_, index) {
+              if (index == 0) return _IpBasedListTile(onTap: onTap);
+
+              final recent = snapshot.data[index - 1];
+              return ListTile(
+                title: Text(recent),
+                onTap: () async {
+                  for (final country in searchIndex.values) {
+                    if (country.name == recent) {
+                      onTap(context, country);
+                      return;
+                    }
+                  }
+                },
+              );
+            },
+            itemCount: (snapshot.hasData ? snapshot.data.length : 0) + 1,
+          ),
           future: prefs.recents,
         )
       : buildResults(context);
@@ -118,6 +119,35 @@ class _CountrySearchDelegate extends SearchDelegate<ApiCountry> {
     await prefs.addRecent(country.name);
     close(context, country);
   }
+}
+
+class _IpBasedListTile extends StatelessWidget {
+  final Future<void> Function(BuildContext, ApiCountry) onTap;
+
+  const _IpBasedListTile({Key key, @required this.onTap}) : super(key: key);
+
+  @override
+  Widget build(BuildContext _) => Selector<AppState, IpApi>(
+        builder: (context, ipapi, _) => ListTile(
+          onTap: ipapi.countryCode != null
+              ? () {
+                  final api = Provider.of<Api>(context, listen: false);
+                  for (final country in api.countries) {
+                    if (country.code == ipapi.countryCode) {
+                      onTap(context, country);
+                    }
+                  }
+                }
+              : null,
+          subtitle: ipapi.isLoading
+              ? Text('Resolving your IP address...')
+              : Text(ipapi.ip ?? 'N/A'),
+          title: ipapi.title != null ? Text(ipapi.title) : null,
+          trailing: ipapi.countryCode != null ? Icon(Icons.location_on) : null,
+        ),
+        selector: (_, app) => app.ipapi,
+        shouldRebuild: (_, __) => true,
+      );
 }
 
 class _SearchPreferences {
