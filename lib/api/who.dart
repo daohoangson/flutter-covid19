@@ -61,6 +61,13 @@ class _WhoProgress {
 
 Future<_WhoData> _compute(_) async => _fetch();
 
+String _corsAnywhere(String url) {
+  final corsAnywhere = kDebugMode
+      ? 'https://cors-anywhere.herokuapp.com'
+      : 'https://cors-anywhere-by-daohoangson.herokuapp.com';
+  return '$corsAnywhere/$url';
+}
+
 void _isolate(SendPort sendPort) async {
   final data = await _fetch(sendPort: sendPort);
   sendPort.send(data);
@@ -68,9 +75,7 @@ void _isolate(SendPort sendPort) async {
 
 Future<_WhoData> _fetch({SendPort sendPort}) async {
   final whoUrl = WhoApi.CSV_URL;
-  final url = kIsWeb
-      ? 'https://cors-anywhere-by-daohoangson.herokuapp.com/$whoUrl'
-      : whoUrl;
+  final url = kIsWeb ? _corsAnywhere(whoUrl) : whoUrl;
   final response = await Dio().getUri<String>(
     Uri.parse(url),
     onReceiveProgress: (count, total) =>
