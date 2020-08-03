@@ -10,6 +10,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class HomeScreen extends StatelessWidget {
+  static const kRouteName = '/';
+
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
