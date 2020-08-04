@@ -16,6 +16,7 @@ class SettingsScreen extends StatelessWidget {
         body: ListView(
           children: [
             _Heading('Preferences'),
+            _PrefDarkTheme(),
             _PrefShowPerformanceOverlay(),
             _PrefUseHqMap(),
             _Heading('References'),
@@ -105,6 +106,28 @@ class _Heading extends StatelessWidget {
           title,
           style: Theme.of(context).textTheme.headline6,
         ),
+      );
+}
+
+class _PrefDarkTheme extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => Selector<AppState, bool>(
+        builder: (context, darkTheme, __) => ListTile(
+          title: Text('Dark theme'),
+          subtitle: Text(
+            darkTheme == true
+                ? 'Always use dark color scheme'
+                : darkTheme == false
+                    ? 'Always use light color scheme'
+                    : 'Switch color scheme automatically',
+          ),
+          trailing: Checkbox(
+            onChanged: (v) => AppState.of(context).darkTheme = v,
+            tristate: true,
+            value: darkTheme,
+          ),
+        ),
+        selector: (_, app) => app.darkTheme,
       );
 }
 

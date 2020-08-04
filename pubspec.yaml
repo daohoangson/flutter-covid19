@@ -17,6 +17,7 @@ dependencies:
   provider:
   scrollable_positioned_list:
   shared_preferences:
+  tuple:
   url_launcher:
 
 dev_dependencies:
