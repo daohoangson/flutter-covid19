@@ -84,8 +84,8 @@ class _TableState extends State<TableWidget> {
         child: InkWell(
           child: _NumberBox(
             child: _NumberText(
-              (order == pair.asc ? '↑ ' : order == pair.desc ? '↓ ' : '') +
-                  (layout.showBoth ? pair.header : pair.headerCasesDeaths),
+              (layout.showBoth ? pair.header : pair.headerCasesDeaths) +
+                  (order == pair.asc ? ' ↑' : order == pair.desc ? ' ↓' : ''),
             ),
           ),
           onTap: () => AppState.of(context).order = pair.flipAscDesc(order),
