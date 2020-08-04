@@ -48,6 +48,7 @@ class _ProgressIndicator extends StatelessWidget {
 
   String get loadingText {
     if (value > 0) {
+      if (value < .4) return '${(value * 100).toStringAsFixed(2)}%';
       if (value < .5) return 'Loading.\u{00a0}\u{00a0}';
       if (value < .6) return 'Loading..\u{00a0}';
       if (value < .7) return 'Loading...';
