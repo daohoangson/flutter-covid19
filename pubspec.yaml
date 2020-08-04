@@ -13,9 +13,11 @@ dependencies:
     sdk: flutter
   http:
   intl:
+  package_info:
   provider:
   scrollable_positioned_list:
   shared_preferences:
+  url_launcher:
 
 dev_dependencies:
   flutter_test:

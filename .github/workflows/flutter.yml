@@ -51,12 +51,19 @@ jobs:
 
           _message=$( \
             echo '### Android builds'; \
+            echo; \
+            echo '<details>'; \
+            echo; \
+            echo '<summary>Build environment</summary>'; \
+            echo; \
             echo '```'; \
             flutter doctor; \
             echo; \
             cat android/local.properties; \
             echo; \
             echo '```'; \
+            echo; \
+            echo '</details>'; \
             echo; \
             ls build/app/outputs/apk/release/*.apk \
               | xargs -n 1 basename \
@@ -119,12 +126,19 @@ jobs:
 
           _message=$( \
             echo '### iOS build'; \
+            echo; \
+            echo '<details>'; \
+            echo; \
+            echo '<summary>Build environment</summary>'; \
+            echo; \
             echo '```'; \
             flutter doctor; \
             echo; \
             cat ios/Flutter/Generated.xcconfig; \
             echo; \
             echo '```'; \
+            echo; \
+            echo '</details>'; \
             echo; \
             printf '[manifest.plist](%s)' "${GCS_URL}/ipa/redirect.html"; \
           )
@@ -172,10 +186,17 @@ jobs:
 
           _message=$( \
             echo '### Web build'; \
+            echo; \
+            echo '<details>'; \
+            echo; \
+            echo '<summary>Build environment</summary>'; \
+            echo; \
             echo '```'; \
             flutter doctor; \
             echo; \
             echo '```'; \
+            echo; \
+            echo '</details>'; \
             echo; \
             echo "- Launch the [Web app](${GCS_URL}/web/index.html)"; \
             echo "- Or open [SettingsScreen](${GCS_URL}/web/index.html#/settings)"; \
