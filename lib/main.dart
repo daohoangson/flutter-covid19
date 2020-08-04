@@ -29,6 +29,8 @@ class MyApp extends StatelessWidget {
             HomeScreen.kRouteName: (_) => HomeScreen(),
             SettingsScreen.kRouteName: (_) => SettingsScreen(),
           },
+          theme: ThemeData.light(),
+          darkTheme: ThemeData.dark(),
           title: 'Covid-19',
           showPerformanceOverlay: showPerformanceOverlay,
         ),
