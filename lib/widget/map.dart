@@ -121,6 +121,7 @@ class _CustomPaintState extends State<_CustomPaint>
             countries: widget.countries,
             focusPoint: focusPoint?.value,
             highlight: widget.highlight,
+            legend: Theme.of(context).textTheme.bodyText2.color,
             map: map,
             order: widget.order,
             progress: widget.progress,
@@ -180,8 +181,10 @@ class _Painter extends CustomPainter {
   final Iterable<ApiCountry> countries;
   final Offset focusPoint;
   final ApiCountry highlight;
+  final Color legend;
   final SvgMap map;
   final SortOrder order;
+  final Paint paint0;
   final double progress;
   final double scale;
 
@@ -189,11 +192,14 @@ class _Painter extends CustomPainter {
     this.countries,
     this.focusPoint,
     this.highlight,
+    @required this.legend,
     @required this.map,
     this.order,
     this.progress,
     this.scale,
-  });
+  }) : paint0 = Paint()
+          ..color = legend
+          ..style = PaintingStyle.stroke;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -231,13 +237,13 @@ class _Painter extends CustomPainter {
       }
 
       if (highlight != null) {
-        _paintCountry(canvas, _paints[0], highlight.code);
+        _paintCountry(canvas, paint0, highlight.code);
       }
     } else {
       final codes = map.getAvailableCountryCodes();
       var i = 0;
       for (final code in codes) {
-        _paintCountry(canvas, _paints[0], code);
+        _paintCountry(canvas, paint0, code);
         i++;
 
         if (progress < 1 && i / codes.length > progress) {
@@ -250,7 +256,7 @@ class _Painter extends CustomPainter {
 
     if (countries != null && highlight == null) {
       for (var i = 1; i < _paints.length; i++) {
-        _paintLegend(canvas, size, i, order.seriousnessValues[i - 1]);
+        _paintLegend(canvas, size, legend, i, order.seriousnessValues[i - 1]);
       }
     }
 
@@ -262,6 +268,7 @@ class _Painter extends CustomPainter {
       ((countries == null) != (other.countries == null)) ||
       focusPoint != other.focusPoint ||
       highlight != other.highlight ||
+      legend != other.legend ||
       map != other.map ||
       order != other.order ||
       progress != other.progress ||
@@ -277,9 +284,7 @@ class _Painter extends CustomPainter {
   static final _legendValueFormatter = intl.NumberFormat.compact();
 
   static final _paints = <Paint>[
-    Paint()
-      ..color = kColors[0]
-      ..style = PaintingStyle.stroke,
+    null,
     Paint()
       ..color = kColors[1]
       ..style = PaintingStyle.fill,
@@ -315,6 +320,7 @@ class _Painter extends CustomPainter {
   static void _paintLegend(
     Canvas canvas,
     Size size,
+    Color color,
     int level,
     int value,
   ) {
@@ -332,7 +338,7 @@ class _Painter extends CustomPainter {
         text: TextSpan(
           text: _legendValueFormatter.format(value),
           style: TextStyle(
-            color: Colors.black,
+            color: color,
             fontSize: legendHeight * .75,
           ),
         ),

@@ -149,7 +149,7 @@ class _Painter extends CustomPainter {
     );
     canvas.restore();
 
-    canvas.drawLine(lineTop, lineBottom, Paint()..color = Colors.grey);
+    canvas.drawLine(lineTop, lineBottom, Paint()..color = underStyle.color);
   }
 
   @override

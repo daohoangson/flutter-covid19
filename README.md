@@ -44,7 +44,9 @@ The data table supports 8 sorting orders:
 | --- | --- | --- | --- |
 | ![New cases descending](./screenshots/007_sort_new_cases.png) | ![Total cases descending](./screenshots/008_sort_total_cases.png) | ![New deaths descending](./screenshots/009_sort_new_deaths.png) | ![Total detahs descending](./screenshots/010_sort_total_deaths.png) |
 
-### Animation
+### Others
+
+#### Animation
 
 Subtle animations are used throughout the app to improve user experiences.
 Some notable ones:
@@ -52,3 +54,11 @@ Some notable ones:
 | Progress indicator | Map (zoom+pan) | Total / new toggler (mobile only) |
 | --- | --- | --- |
 | ![Progress indicator](./screenshots/011_animation_progress_indicator.gif) | ![Map](./screenshots/012_animation_map.gif) | ![Total / new toggler](./screenshots/013_animation_total_new_toggler.gif) |
+
+#### Dark theme
+
+User can choose to always use light / dark theme or let the app switch theme automatically.
+
+| Light | Dark |
+| --- | --- |
+| ![Light](./screenshots/014_theme_light.png) | ![Dark](./screenshots/015_theme_dark.png) |

@@ -42,7 +42,7 @@ class SortOrder {
       }
     }
 
-    return 0;
+    throw RangeError('value=$value, values=$seriousnessValues');
   }
 
   SortOrder flipNewTotal() {
@@ -253,7 +253,7 @@ const _seriousnessDeathsTotal = <int>[
 ];
 
 final kColors = <Color>[
-  Colors.black,
+  null,
   Colors.green[700],
   Colors.green,
   Colors.lime[600],
@@ -261,7 +261,7 @@ final kColors = <Color>[
   Colors.orange,
   Colors.orange[800],
   Colors.red[600],
-  Colors.red[900],
-  Colors.purple[800],
-  Colors.black87,
+  Colors.red[800],
+  Colors.purple[700],
+  Colors.purple[900],
 ];
