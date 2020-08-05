@@ -89,6 +89,7 @@ class _CustomPaint extends StatefulWidget {
 class _CustomPaintState extends State<_CustomPaint>
     with TickerProviderStateMixin {
   AnimationController _controller;
+  ApiCountry _highlightPrev;
 
   Animation<Offset> focusPoint;
   Animation<double> scale;
@@ -103,7 +104,11 @@ class _CustomPaintState extends State<_CustomPaint>
     _controller = AnimationController(
       duration: const Duration(seconds: 1),
       vsync: this,
-    )..addListener(() => setState(() {}));
+    )..addListener(() => setState(() {
+          if (_controller.isCompleted) {
+            _highlightPrev = widget.highlight;
+          }
+        }));
 
     _resetAnimation();
   }
@@ -121,6 +126,8 @@ class _CustomPaintState extends State<_CustomPaint>
             countries: widget.countries,
             focusPoint: focusPoint?.value,
             highlight: widget.highlight,
+            highlightOpacity: _controller.value,
+            highlightPrev: _highlightPrev,
             legend: Theme.of(context).textTheme.bodyText2.color,
             map: map,
             order: widget.order,
@@ -181,6 +188,8 @@ class _Painter extends CustomPainter {
   final Iterable<ApiCountry> countries;
   final Offset focusPoint;
   final ApiCountry highlight;
+  final double highlightOpacity;
+  final ApiCountry highlightPrev;
   final Color legend;
   final SvgMap map;
   final SortOrder order;
@@ -192,6 +201,8 @@ class _Painter extends CustomPainter {
     this.countries,
     this.focusPoint,
     this.highlight,
+    this.highlightOpacity,
+    this.highlightPrev,
     @required this.legend,
     @required this.map,
     this.order,
@@ -229,15 +240,23 @@ class _Painter extends CustomPainter {
     if (scale != 1) canvas.scale(scale);
 
     if (countries != null) {
-      for (final country in countries) {
-        final seriousness = order
-            .calculateSeriousness(record: country.latest)
-            .clamp(0, _paints.length - 1);
-        _paintCountry(canvas, _paints[seriousness], country.code);
-      }
+      _paintCountry(canvas, paint0, highlight?.code);
+      _paintCountry(canvas, paint0, highlightPrev?.code);
 
-      if (highlight != null) {
-        _paintCountry(canvas, paint0, highlight.code);
+      for (final country in countries) {
+        final seriousness = order.calculateSeriousness(record: country.latest);
+        final paint = highlight == null
+            ? _paints[seriousness]
+            : country == highlight
+                ? (Paint()
+                  ..color = kColors[seriousness].withOpacity(
+                      highlightPrev == null ? 1 : highlightOpacity))
+                : country == highlightPrev
+                    ? (Paint()
+                      ..color = kColors[seriousness]
+                          .withOpacity(1 - highlightOpacity))
+                    : paint0;
+        _paintCountry(canvas, paint, country.code);
       }
     } else {
       final codes = map.getAvailableCountryCodes();
@@ -275,6 +294,8 @@ class _Painter extends CustomPainter {
       scale != other.scale;
 
   void _paintCountry(Canvas canvas, Paint paint, String code) {
+    if (code == null) return;
+
     final path = map.getCountryByCode(code)?.path;
     if (path == null) return;
 
@@ -285,36 +306,16 @@ class _Painter extends CustomPainter {
 
   static final _paints = <Paint>[
     null,
-    Paint()
-      ..color = kColors[1]
-      ..style = PaintingStyle.fill,
-    Paint()
-      ..color = kColors[2]
-      ..style = PaintingStyle.fill,
-    Paint()
-      ..color = kColors[3]
-      ..style = PaintingStyle.fill,
-    Paint()
-      ..color = kColors[4]
-      ..style = PaintingStyle.fill,
-    Paint()
-      ..color = kColors[5]
-      ..style = PaintingStyle.fill,
-    Paint()
-      ..color = kColors[6]
-      ..style = PaintingStyle.fill,
-    Paint()
-      ..color = kColors[7]
-      ..style = PaintingStyle.fill,
-    Paint()
-      ..color = kColors[8]
-      ..style = PaintingStyle.fill,
-    Paint()
-      ..color = kColors[9]
-      ..style = PaintingStyle.fill,
-    Paint()
-      ..color = kColors[10]
-      ..style = PaintingStyle.fill,
+    Paint()..color = kColors[1],
+    Paint()..color = kColors[2],
+    Paint()..color = kColors[3],
+    Paint()..color = kColors[4],
+    Paint()..color = kColors[5],
+    Paint()..color = kColors[6],
+    Paint()..color = kColors[7],
+    Paint()..color = kColors[8],
+    Paint()..color = kColors[9],
+    Paint()..color = kColors[10],
   ];
 
   static void _paintLegend(
