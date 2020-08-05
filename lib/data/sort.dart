@@ -36,13 +36,13 @@ class SortOrder {
   int calculateSeriousness({ApiRecord record, int value}) {
     value ??= measure(record);
     final max = seriousnessValues.length;
-    for (var i = max - 1; i >= 0; i--) {
+    for (var i = max - 1; i > 0; i--) {
       if (value > seriousnessValues[i]) {
         return i + 1;
       }
     }
 
-    throw RangeError('value=$value, values=$seriousnessValues');
+    return 1;
   }
 
   SortOrder flipNewTotal() {
