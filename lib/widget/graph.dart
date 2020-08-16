@@ -55,8 +55,8 @@ class _Painter extends CustomPainter {
 
     _prePaint();
 
-    final scaleX = _maxX > 0 ? size.width / _maxX : 1;
-    final scaleY = _maxY > 0 ? size.height / _maxY : 1;
+    final scaleX = _maxX > 0 ? size.width / _maxX : 1.0;
+    final scaleY = _maxY > 0 ? size.height / _maxY : 1.0;
     switch (mode) {
       case GraphMode.bar:
         canvas.save();
