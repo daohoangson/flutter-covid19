@@ -126,15 +126,11 @@ Future<_WhoData> _fetch({SendPort sendPort}) async {
   }
 
   var i = 1;
-  DateTime latestDate;
   final list = List<ApiCountry>();
   final map = Map<String, int>();
   while (i < data.length) {
     final dataRow = data[i++];
     final countryCode = dataRow[fieldIndexCountryCode];
-
-    // ignore `Other` data
-    if (countryCode == ' ') continue;
 
     if (!map.containsKey(countryCode)) {
       list.add(ApiCountry(
@@ -150,9 +146,6 @@ Future<_WhoData> _fetch({SendPort sendPort}) async {
     if (dateReported == null) {
       continue;
     }
-    if (latestDate == null || latestDate.isBefore(dateReported)) {
-      latestDate = dateReported;
-    }
 
     list[map[countryCode]].records.add(ApiRecord(
           casesNew: int.tryParse(dataRow[fieldIndexNewCases]) ?? 0,
@@ -163,12 +156,8 @@ Future<_WhoData> _fetch({SendPort sendPort}) async {
         ));
   }
 
-  final worldLatest = ApiRecord.from(list
-      .map((country) => country.latest)
-      .where((record) => record.date == latestDate));
-
   return _WhoData(
     countries: list,
-    worldLatest: worldLatest,
+    worldLatest: ApiRecord.from(list.map((country) => country.latest)),
   );
 }
