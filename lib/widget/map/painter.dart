@@ -1,70 +1,14 @@
 import 'dart:developer';
 import 'dart:math';
 
+import 'package:covid19/app_state.dart';
 import 'package:covid19/data/api.dart';
 import 'package:covid19/data/sort.dart';
 import 'package:covid19/data/svg.dart';
-import 'package:covid19/app_state.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' as intl;
-import 'package:provider/provider.dart';
 
-class MapProgressIndicator extends StatelessWidget {
-  final double value;
-
-  const MapProgressIndicator({Key key, @required this.value}) : super(key: key);
-
-  @override
-  Widget build(BuildContext _) => Selector<AppState, bool>(
-        builder: (_, useHqMap, __) => Padding(
-          child: LayoutBuilder(
-            builder: (_, bc) => _CustomPaint(
-              progress: value,
-              size: bc.biggest,
-              useHqMap: useHqMap,
-            ),
-          ),
-          padding: const EdgeInsets.all(8),
-        ),
-        selector: (_, app) => app.useHqMap,
-      );
-}
-
-class MapWidget extends StatelessWidget {
-  MapWidget({Key key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext _) => Consumer2<Api, AppState>(
-        builder: (context, api, app, _) => Padding(
-          child: Stack(
-            children: [
-              LayoutBuilder(
-                builder: (_, bc) => _CustomPaint(
-                  countries: api.hasData ? api.countries : null,
-                  highlight: app.highlight,
-                  order: app.order,
-                  size: bc.biggest,
-                  useHqMap: app.useHqMap,
-                ),
-              ),
-              if (app.highlight != null)
-                Positioned.directional(
-                  child: IconButton(
-                    icon: Icon(Icons.close),
-                    onPressed: () => app.setHighlight(Highlighter.map, null),
-                    tooltip: 'Close',
-                  ),
-                  start: 0,
-                  textDirection: Directionality.of(context),
-                ),
-            ],
-          ),
-          padding: const EdgeInsets.all(8),
-        ),
-      );
-}
-
-class _CustomPaint extends StatefulWidget {
+class MapPainter extends StatefulWidget {
   final Iterable<ApiCountry> countries;
   final ApiCountry highlight;
   final SortOrder order;
@@ -72,7 +16,7 @@ class _CustomPaint extends StatefulWidget {
   final Size size;
   final bool useHqMap;
 
-  _CustomPaint({
+  MapPainter({
     this.countries,
     this.highlight,
     Key key,
@@ -83,16 +27,21 @@ class _CustomPaint extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<StatefulWidget> createState() => _CustomPaintState();
+  State<StatefulWidget> createState() => _MapState();
 }
 
-class _CustomPaintState extends State<_CustomPaint>
-    with TickerProviderStateMixin {
-  AnimationController _controller;
-  ApiCountry _highlightPrev;
+class _MapState extends State<MapPainter> with TickerProviderStateMixin {
+  double canvasScale;
+  Offset canvasTranslate;
+  AnimationController controller;
+  Offset focalPoint;
+  Animation<Offset> focalPointAnimation;
+  ApiCountry highlightPrev;
+  double scale = 1.0;
+  Animation<double> scaleAnimation;
 
-  Animation<Offset> focusPoint;
-  Animation<double> scale;
+  Offset _onScaleLastLocalFocalPoint;
+  double _onScaleBaseScale;
 
   Offset get centerPoint => Offset(map.width / 2, map.height / 2);
   SvgMap get map => widget.useHqMap == true ? hqMap : sdMap;
@@ -101,46 +50,91 @@ class _CustomPaintState extends State<_CustomPaint>
   initState() {
     super.initState();
 
-    _controller = AnimationController(
+    controller = AnimationController(
       duration: const Duration(seconds: 1),
       vsync: this,
     )..addListener(() => setState(() {
-          if (_controller.isCompleted) {
-            _highlightPrev = widget.highlight;
+          if (controller.isCompleted) {
+            highlightPrev = widget.highlight;
+
+            focalPointAnimation = null;
+            scaleAnimation = null;
           }
         }));
 
+    _resetCanvas();
     _resetAnimation();
   }
 
   @override
   dispose() {
-    _controller.dispose();
+    controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) => SizedBox.fromSize(
-        child: CustomPaint(
-          painter: _Painter(
-            countries: widget.countries,
-            focusPoint: focusPoint?.value,
-            highlight: widget.highlight,
-            highlightOpacity: _controller.value,
-            highlightPrev: _highlightPrev,
-            legend: Theme.of(context).textTheme.bodyText2.color,
-            map: map,
-            order: widget.order,
-            progress: widget.progress,
-            scale: scale?.value ?? 1,
+        child: GestureDetector(
+          child: CustomPaint(
+            painter: _Painter(
+              canvasScale: canvasScale,
+              canvasTranslate: canvasTranslate,
+              countries: widget.countries,
+              focalPoint: focalPointAnimation?.value ?? focalPoint,
+              highlight: widget.highlight,
+              highlightOpacity: controller.value,
+              highlightPrev: highlightPrev,
+              legend: Theme.of(context).textTheme.bodyText2.color,
+              map: map,
+              order: widget.order,
+              progress: widget.progress,
+              scale: scaleAnimation?.value ?? scale,
+              size: widget.size,
+            ),
           ),
+          onDoubleTap: () => setState(() => scale = scale * 1.5),
+          onScaleStart: (details) {
+            _onScaleLastLocalFocalPoint = details.localFocalPoint;
+            _onScaleBaseScale = scale;
+          },
+          onScaleUpdate: (details) => setState(() {
+            if (_onScaleBaseScale != null) {
+              scale = _onScaleBaseScale * details.scale;
+            }
+
+            if (_onScaleLastLocalFocalPoint != null) {
+              final delta =
+                  (details.localFocalPoint - _onScaleLastLocalFocalPoint) /
+                      scale /
+                      canvasScale;
+              focalPoint = focalPoint - delta;
+            }
+            _onScaleLastLocalFocalPoint = details.localFocalPoint;
+          }),
+          onTapUp: (details) {
+            if (widget.countries == null) return;
+
+            final offsetFromCenter = details.localPosition -
+                Offset(widget.size.width / 2, widget.size.height / 2);
+            final point = focalPoint + offsetFromCenter / scale / canvasScale;
+            for (final country in widget.countries) {
+              final svg = map.getCountryByCode(country.code);
+              if (svg?.path?.contains(point) == true) {
+                AppState.of(context).setHighlight(Highlighter.map, country);
+              }
+            }
+          },
         ),
         size: widget.size,
       );
 
   @override
-  void didUpdateWidget(_CustomPaint oldWidget) {
+  void didUpdateWidget(MapPainter oldWidget) {
     super.didUpdateWidget(oldWidget);
+
+    if (widget.size != oldWidget.size) {
+      _resetCanvas();
+    }
 
     if (widget.highlight != oldWidget.highlight ||
         widget.useHqMap != oldWidget.useHqMap) {
@@ -148,25 +142,38 @@ class _CustomPaintState extends State<_CustomPaint>
     }
   }
 
+  void _resetCanvas() {
+    final ratio = map.width / map.height;
+    var width = widget.size.width;
+    var height = width / ratio;
+    if (height > widget.size.height) {
+      height = widget.size.height;
+      width = height * ratio;
+    }
+
+    canvasTranslate = Offset(
+        (widget.size.width - width) / 2, (widget.size.height - height) / 2);
+    canvasScale = width / map.width;
+  }
+
   void _resetAnimation() {
     final code = widget.highlight?.code;
     final rect = map.getCountryByCode(code)?.rect;
-    final focusBegin = focusPoint?.value ?? centerPoint;
-    final focusEnd = rect != null ? rect.center : centerPoint;
-    focusPoint = Tween<Offset>(
-      begin: focusBegin,
-      end: focusEnd,
-    ).animate(_controller);
+    final focalBegin = focalPointAnimation?.value ?? focalPoint ?? centerPoint;
+    focalPoint = rect?.center ?? centerPoint;
+    focalPointAnimation = Tween<Offset>(
+      begin: focalBegin,
+      end: focalPoint,
+    ).animate(controller);
 
-    final scaleBegin = scale?.value ?? 1.0;
-    final scaleEnd =
-        rect != null ? _calculateScaleToFit(rect, widget.size) : 1.0;
-    scale = Tween<double>(
+    final scaleBegin = scaleAnimation?.value ?? scale;
+    scale = rect != null ? _calculateScaleToFit(rect, widget.size) : 1.0;
+    scaleAnimation = Tween<double>(
       begin: scaleBegin,
-      end: scaleEnd,
-    ).animate(_controller);
+      end: scale,
+    ).animate(controller);
 
-    _controller
+    controller
       ..reset()
       ..forward();
   }
@@ -185,8 +192,10 @@ class _CustomPaintState extends State<_CustomPaint>
 }
 
 class _Painter extends CustomPainter {
+  final double canvasScale;
+  final Offset canvasTranslate;
   final Iterable<ApiCountry> countries;
-  final Offset focusPoint;
+  final Offset focalPoint;
   final ApiCountry highlight;
   final double highlightOpacity;
   final ApiCountry highlightPrev;
@@ -196,10 +205,13 @@ class _Painter extends CustomPainter {
   final Paint paint0;
   final double progress;
   final double scale;
+  final Size size;
 
   _Painter({
+    @required this.canvasScale,
+    @required this.canvasTranslate,
     this.countries,
-    this.focusPoint,
+    this.focalPoint,
     this.highlight,
     this.highlightOpacity,
     this.highlightPrev,
@@ -208,34 +220,27 @@ class _Painter extends CustomPainter {
     this.order,
     this.progress,
     this.scale,
+    @required this.size,
   }) : paint0 = Paint()
           ..color = legend
           ..style = PaintingStyle.stroke;
 
   @override
-  void paint(Canvas canvas, Size size) {
+  void paint(Canvas canvas, Size _) {
     Timeline.startSync('Covid-19 map', arguments: {
       'hasCountries': countries != null,
       'scale': scale,
     });
 
-    final ratio = map.width / map.height;
-    var width = size.width;
-    var height = width / ratio;
-    if (height > size.height) {
-      height = size.height;
-      width = height * ratio;
-    }
-
     canvas.save();
 
-    canvas.translate((size.width - width) / 2, (size.height - height) / 2);
-    canvas.scale(width / map.width, height / map.height);
+    canvas.translate(canvasTranslate.dx, canvasTranslate.dy);
+    canvas.scale(canvasScale, canvasScale);
 
-    if (focusPoint != null)
+    if (focalPoint != null)
       canvas.translate(
-        (map.width / 2 - focusPoint.dx * scale),
-        (map.height / 2 - focusPoint.dy * scale),
+        (map.width / 2 - focalPoint.dx * scale),
+        (map.height / 2 - focalPoint.dy * scale),
       );
     if (scale != 1) canvas.scale(scale);
 
@@ -285,7 +290,7 @@ class _Painter extends CustomPainter {
   @override
   bool shouldRepaint(_Painter other) =>
       ((countries == null) != (other.countries == null)) ||
-      focusPoint != other.focusPoint ||
+      focalPoint != other.focalPoint ||
       highlight != other.highlight ||
       legend != other.legend ||
       map != other.map ||
