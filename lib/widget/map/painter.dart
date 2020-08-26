@@ -1,6 +1,7 @@
 import 'dart:developer';
 import 'dart:math';
 
+import 'package:covid19/app_state.dart';
 import 'package:covid19/data/api.dart';
 import 'package:covid19/data/sort.dart';
 import 'package:covid19/data/svg.dart';
@@ -61,6 +62,7 @@ class _MapState extends State<MapPainter> with TickerProviderStateMixin {
           }
         }));
 
+    _resetCanvas();
     _resetAnimation();
   }
 
@@ -109,6 +111,19 @@ class _MapState extends State<MapPainter> with TickerProviderStateMixin {
             }
             _onScaleLastLocalFocalPoint = details.localFocalPoint;
           }),
+          onTapUp: (details) {
+            if (widget.countries == null) return;
+
+            final offsetFromCenter = details.localPosition -
+                Offset(widget.size.width / 2, widget.size.height / 2);
+            final point = focalPoint + offsetFromCenter / scale / canvasScale;
+            for (final country in widget.countries) {
+              final svg = map.getCountryByCode(country.code);
+              if (svg?.path?.contains(point) == true) {
+                AppState.of(context).setHighlight(Highlighter.map, country);
+              }
+            }
+          },
         ),
         size: widget.size,
       );
@@ -117,14 +132,17 @@ class _MapState extends State<MapPainter> with TickerProviderStateMixin {
   void didUpdateWidget(MapPainter oldWidget) {
     super.didUpdateWidget(oldWidget);
 
+    if (widget.size != oldWidget.size) {
+      _resetCanvas();
+    }
+
     if (widget.highlight != oldWidget.highlight ||
-        widget.useHqMap != oldWidget.useHqMap ||
-        widget.size != oldWidget.size) {
+        widget.useHqMap != oldWidget.useHqMap) {
       _resetAnimation();
     }
   }
 
-  void _resetAnimation() {
+  void _resetCanvas() {
     final ratio = map.width / map.height;
     var width = widget.size.width;
     var height = width / ratio;
@@ -136,7 +154,9 @@ class _MapState extends State<MapPainter> with TickerProviderStateMixin {
     canvasTranslate = Offset(
         (widget.size.width - width) / 2, (widget.size.height - height) / 2);
     canvasScale = width / map.width;
+  }
 
+  void _resetAnimation() {
     final code = widget.highlight?.code;
     final rect = map.getCountryByCode(code)?.rect;
     final focalBegin = focalPointAnimation?.value ?? focalPoint ?? centerPoint;
