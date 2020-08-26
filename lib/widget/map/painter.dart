@@ -4,67 +4,10 @@ import 'dart:math';
 import 'package:covid19/data/api.dart';
 import 'package:covid19/data/sort.dart';
 import 'package:covid19/data/svg.dart';
-import 'package:covid19/app_state.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' as intl;
-import 'package:provider/provider.dart';
 
-class MapProgressIndicator extends StatelessWidget {
-  final double value;
-
-  const MapProgressIndicator({Key key, @required this.value}) : super(key: key);
-
-  @override
-  Widget build(BuildContext _) => Selector<AppState, bool>(
-        builder: (_, useHqMap, __) => Padding(
-          child: LayoutBuilder(
-            builder: (_, bc) => _CustomPaint(
-              progress: value,
-              size: bc.biggest,
-              useHqMap: useHqMap,
-            ),
-          ),
-          padding: const EdgeInsets.all(8),
-        ),
-        selector: (_, app) => app.useHqMap,
-      );
-}
-
-class MapWidget extends StatelessWidget {
-  MapWidget({Key key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext _) => Consumer2<Api, AppState>(
-        builder: (context, api, app, _) => Padding(
-          child: Stack(
-            children: [
-              LayoutBuilder(
-                builder: (_, bc) => _CustomPaint(
-                  countries: api.hasData ? api.countries : null,
-                  highlight: app.highlight,
-                  order: app.order,
-                  size: bc.biggest,
-                  useHqMap: app.useHqMap,
-                ),
-              ),
-              if (app.highlight != null)
-                Positioned.directional(
-                  child: IconButton(
-                    icon: Icon(Icons.close),
-                    onPressed: () => app.setHighlight(Highlighter.map, null),
-                    tooltip: 'Close',
-                  ),
-                  start: 0,
-                  textDirection: Directionality.of(context),
-                ),
-            ],
-          ),
-          padding: const EdgeInsets.all(8),
-        ),
-      );
-}
-
-class _CustomPaint extends StatefulWidget {
+class MapPainter extends StatefulWidget {
   final Iterable<ApiCountry> countries;
   final ApiCountry highlight;
   final SortOrder order;
@@ -72,7 +15,7 @@ class _CustomPaint extends StatefulWidget {
   final Size size;
   final bool useHqMap;
 
-  _CustomPaint({
+  MapPainter({
     this.countries,
     this.highlight,
     Key key,
@@ -83,16 +26,16 @@ class _CustomPaint extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<StatefulWidget> createState() => _CustomPaintState();
+  State<StatefulWidget> createState() => _MapState();
 }
 
-class _CustomPaintState extends State<_CustomPaint>
-    with TickerProviderStateMixin {
-  AnimationController _controller;
-  ApiCountry _highlightPrev;
-
-  Animation<Offset> focusPoint;
-  Animation<double> scale;
+class _MapState extends State<MapPainter> with TickerProviderStateMixin {
+  AnimationController controller;
+  Offset focusPoint;
+  Animation<Offset> focusPointAnimation;
+  ApiCountry highlightPrev;
+  double scale;
+  Animation<double> scaleAnimation;
 
   Offset get centerPoint => Offset(map.width / 2, map.height / 2);
   SvgMap get map => widget.useHqMap == true ? hqMap : sdMap;
@@ -101,12 +44,15 @@ class _CustomPaintState extends State<_CustomPaint>
   initState() {
     super.initState();
 
-    _controller = AnimationController(
+    controller = AnimationController(
       duration: const Duration(seconds: 1),
       vsync: this,
     )..addListener(() => setState(() {
-          if (_controller.isCompleted) {
-            _highlightPrev = widget.highlight;
+          if (controller.isCompleted) {
+            highlightPrev = widget.highlight;
+
+            focusPointAnimation = null;
+            scaleAnimation = null;
           }
         }));
 
@@ -115,7 +61,7 @@ class _CustomPaintState extends State<_CustomPaint>
 
   @override
   dispose() {
-    _controller.dispose();
+    controller.dispose();
     super.dispose();
   }
 
@@ -124,22 +70,22 @@ class _CustomPaintState extends State<_CustomPaint>
         child: CustomPaint(
           painter: _Painter(
             countries: widget.countries,
-            focusPoint: focusPoint?.value,
+            focusPoint: focusPointAnimation?.value ?? focusPoint,
             highlight: widget.highlight,
-            highlightOpacity: _controller.value,
-            highlightPrev: _highlightPrev,
+            highlightOpacity: controller.value,
+            highlightPrev: highlightPrev,
             legend: Theme.of(context).textTheme.bodyText2.color,
             map: map,
             order: widget.order,
             progress: widget.progress,
-            scale: scale?.value ?? 1,
+            scale: scaleAnimation?.value ?? scale ?? 1.0,
           ),
         ),
         size: widget.size,
       );
 
   @override
-  void didUpdateWidget(_CustomPaint oldWidget) {
+  void didUpdateWidget(MapPainter oldWidget) {
     super.didUpdateWidget(oldWidget);
 
     if (widget.highlight != oldWidget.highlight ||
@@ -151,22 +97,21 @@ class _CustomPaintState extends State<_CustomPaint>
   void _resetAnimation() {
     final code = widget.highlight?.code;
     final rect = map.getCountryByCode(code)?.rect;
-    final focusBegin = focusPoint?.value ?? centerPoint;
-    final focusEnd = rect != null ? rect.center : centerPoint;
-    focusPoint = Tween<Offset>(
+    final focusBegin = focusPointAnimation?.value ?? focusPoint ?? centerPoint;
+    focusPoint = rect?.center ?? centerPoint;
+    focusPointAnimation = Tween<Offset>(
       begin: focusBegin,
-      end: focusEnd,
-    ).animate(_controller);
+      end: focusPoint,
+    ).animate(controller);
 
-    final scaleBegin = scale?.value ?? 1.0;
-    final scaleEnd =
-        rect != null ? _calculateScaleToFit(rect, widget.size) : 1.0;
-    scale = Tween<double>(
+    final scaleBegin = scaleAnimation?.value ?? scale ?? 1.0;
+    scale = rect != null ? _calculateScaleToFit(rect, widget.size) : 1.0;
+    scaleAnimation = Tween<double>(
       begin: scaleBegin,
-      end: scaleEnd,
-    ).animate(_controller);
+      end: scale,
+    ).animate(controller);
 
-    _controller
+    controller
       ..reset()
       ..forward();
   }
